@@ -3,22 +3,22 @@ app OpenSaaS {
     version: "^0.23.0"
   },
 
-  title: "My Open SaaS App",
+  title: "Golden Voices Connect",
 
   head: [
     "<link rel='icon' href='/favicon.ico' />",
 
-    "<meta name='description' content='Your apps main description and features.' />",
-    "<meta name='author' content='Your (App) Name' />",
-    "<meta name='keywords' content='saas, solution, product, app, service' />",
+    "<meta name='description' content='AI-powered daily calls to check on your elderly loved ones. Available in English, Urdu, and Hindi.' />",
+    "<meta name='author' content='Golden Voices Connect' />",
+    "<meta name='keywords' content='elderly care, AI calls, family connection, daily check-in' />",
 
     "<meta property='og:type' content='website' />",
-    "<meta property='og:title' content='Your Open SaaS App' />",
-    "<meta property='og:site_name' content='Your Open SaaS App' />",
-    "<meta property='og:url' content='https://your-saas-app.com' />",
-    "<meta property='og:description' content='Your apps main description and features.' />",
-    "<meta property='og:image' content='https://your-saas-app.com/public-banner.webp' />",
-    "<meta name='twitter:image' content='https://your-saas-app.com/public-banner.webp' />",
+    "<meta property='og:title' content='Golden Voices Connect' />",
+    "<meta property='og:site_name' content='Golden Voices Connect' />",
+    "<meta property='og:url' content='https://goldenvoices.app' />",
+    "<meta property='og:description' content='AI-powered daily calls to check on your elderly loved ones.' />",
+    "<meta property='og:image' content='https://goldenvoices.app/public-banner.webp' />",
+    "<meta name='twitter:image' content='https://goldenvoices.app/public-banner.webp' />",
     "<meta name='twitter:image:width' content='800' />",
     "<meta name='twitter:image:height' content='400' />",
     "<meta name='twitter:card' content='summary_large_image' />",
@@ -38,8 +38,8 @@ app OpenSaaS {
       //   (RequestPasswordReset(Route|Page), PasswordReset(Route|Page), EmailVerification(Route|Page))
       email: {
         fromField: {
-          name: "Open SaaS App",
-          email: "me@example.com"
+          name: "Golden Voices Connect",
+          email: "no-reply@goldenvoices.app"
         },
         emailVerification: {
           clientRoute: EmailVerificationRoute,
@@ -305,6 +305,148 @@ page AdminUIButtonsPage {
 route NotFoundRoute { path: "*", to: NotFoundPage }
 page NotFoundPage {
   component: import { NotFoundPage } from "@src/client/components/NotFoundPage"
+}
+//#endregion
+
+//#region Golden Voices — Pages
+route DashboardRoute { path: "/dashboard", to: DashboardPage }
+page DashboardPage {
+  authRequired: true
+  component: import { DashboardPage } from "@src/golden-voices/DashboardPage"
+}
+
+route CallDetailRoute { path: "/dashboard/calls/:callId", to: CallDetailPage }
+page CallDetailPage {
+  authRequired: true
+  component: import { CallDetailPage } from "@src/golden-voices/CallDetailPage"
+}
+
+route CallsRoute { path: "/dashboard/calls", to: CallsPage }
+page CallsPage {
+  authRequired: true
+  component: import { CallsPage } from "@src/golden-voices/CallsPage"
+}
+
+route NewSeniorRoute { path: "/dashboard/seniors/new", to: NewSeniorPage }
+page NewSeniorPage {
+  authRequired: true
+  component: import { NewSeniorPage } from "@src/golden-voices/NewSeniorPage"
+}
+
+route EditSeniorRoute { path: "/dashboard/seniors/:seniorId/edit", to: EditSeniorPage }
+page EditSeniorPage {
+  authRequired: true
+  component: import { EditSeniorPage } from "@src/golden-voices/EditSeniorPage"
+}
+
+route ScheduleRoute { path: "/dashboard/schedule", to: SchedulePage }
+page SchedulePage {
+  authRequired: true
+  component: import { SchedulePage } from "@src/golden-voices/SchedulePage"
+}
+
+route BillingRoute { path: "/dashboard/billing", to: BillingPage }
+page BillingPage {
+  authRequired: true
+  component: import { BillingPage } from "@src/golden-voices/BillingPage"
+}
+//#endregion
+
+//#region Golden Voices — Senior Operations
+action createSenior {
+  fn: import { createSenior } from "@src/golden-voices/operations"
+  entities: [User, Senior]
+}
+action updateSenior {
+  fn: import { updateSenior } from "@src/golden-voices/operations"
+  entities: [User, Senior]
+}
+action deleteSenior {
+  fn: import { deleteSenior } from "@src/golden-voices/operations"
+  entities: [User, Senior]
+}
+query getSeniors {
+  fn: import { getSeniors } from "@src/golden-voices/operations"
+  entities: [User, Senior]
+}
+query getSenior {
+  fn: import { getSenior } from "@src/golden-voices/operations"
+  entities: [User, Senior, ScheduledCall]
+}
+//#endregion
+
+//#region Golden Voices — Call Operations
+query getCalls {
+  fn: import { getCalls } from "@src/golden-voices/operations"
+  entities: [User, Call]
+}
+query getCall {
+  fn: import { getCall } from "@src/golden-voices/operations"
+  entities: [User, Call, CallSummary, CallInsight]
+}
+query getDashboardStats {
+  fn: import { getDashboardStats } from "@src/golden-voices/operations"
+  entities: [User, Call, Senior, UserSubscription, CreditTransaction]
+}
+//#endregion
+
+//#region Golden Voices — Schedule Operations
+action scheduleCall {
+  fn: import { scheduleCall } from "@src/golden-voices/operations"
+  entities: [User, Senior, ScheduledCall]
+}
+action updateScheduledCall {
+  fn: import { updateScheduledCall } from "@src/golden-voices/operations"
+  entities: [User, Senior, ScheduledCall]
+}
+action cancelScheduledCall {
+  fn: import { cancelScheduledCall } from "@src/golden-voices/operations"
+  entities: [User, ScheduledCall]
+}
+query getScheduledCalls {
+  fn: import { getScheduledCalls } from "@src/golden-voices/operations"
+  entities: [User, Senior, ScheduledCall]
+}
+//#endregion
+
+//#region Golden Voices — Credits & Billing
+query getCredits {
+  fn: import { getCredits } from "@src/golden-voices/operations"
+  entities: [User, UserSubscription, CreditTransaction]
+}
+action updateSubscription {
+  fn: import { updateSubscription } from "@src/golden-voices/operations"
+  entities: [User, UserSubscription]
+}
+//#endregion
+
+//#region Vapi Webhook
+api vapiWebhook {
+  fn: import { vapiWebhook } from "@src/golden-voices/vapiWebhook"
+  entities: [User, Call, CallSummary, CallInsight, Senior, ScheduledCall, CreditTransaction]
+  middlewareConfigFn: import { vapiWebhookMiddlewareConfig } from "@src/golden-voices/vapiWebhook"
+  httpRoute: (POST, "/webhooks/vapi")
+}
+//#endregion
+
+//#region Cron Jobs
+job processScheduledCalls {
+  executor: PgBoss
+  perform: {
+    fn: import { processScheduledCalls } from "@src/golden-voices/jobs/processScheduledCalls"
+  }
+  schedule: {
+    cron: "*/5 * * * *"
+  }
+  entities: [User, Senior, ScheduledCall, Call, UserSubscription, CreditTransaction]
+}
+
+job generateCallSummary {
+  executor: PgBoss
+  perform: {
+    fn: import { generateCallSummary } from "@src/golden-voices/jobs/generateCallSummary"
+  }
+  entities: [Call, CallSummary, CallInsight]
 }
 //#endregion
 

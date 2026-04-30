@@ -10,102 +10,232 @@ generator client {
 model User {
   id                        String          @id @default(uuid())
   createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
 
   email                     String?         @unique
-  username                  String?         @unique
+  phone                     String?
+  preferredLanguage         String          @default("en") // en | ur | hi
   isAdmin                   Boolean         @default(false)
-
+  credits                   Int             @default(5)
   paymentProcessorUserId    String?         @unique
-  lemonSqueezyCustomerPortalUrl String?     // You can delete this if you're not using Lemon Squeezy as your payments processor.
-  subscriptionStatus        String?         // 'active', 'cancel_at_period_end', 'past_due', 'deleted'
-  subscriptionPlan          String?         // 'hobby', 'pro'
+  stripeCustomerId          String?
+  subscriptionStatus        String?         // 'active' | 'cancel_at_period_end' | 'past_due' | 'deleted'
+  subscriptionPlan         String?         // 'free' | 'starter' | 'premium'
   datePaid                  DateTime?
-  credits                   Int             @default(3)
 
+  seniors                   Senior[]
+  calls                     Call[]
+  scheduledCalls            ScheduledCall[]
+  userSubscriptions         UserSubscription[]
+  creditTransactions        CreditTransaction[]
   gptResponses              GptResponse[]
   contactFormMessages       ContactFormMessage[]
   tasks                     Task[]
   files                     File[]
 }
 
+model Senior {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+
+  name         String
+  phone        String
+  language     String   @default("en") // en | ur | hi
+  relationship String?  // grandmother | grandfather | mother | father | other
+  notes        String?  // health conditions, interests
+  isActive     Boolean  @default(true)
+
+  calls          Call[]
+  scheduledCalls ScheduledCall[]
+
+  @@index([userId])
+}
+
+model Call {
+  id               String   @id @default(uuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  seniorId         String
+  senior           Senior   @relation(fields: [seniorId], references: [id])
+
+  vapiCallSid      String?
+  status           String   @default("pending") // pending | in_progress | completed | failed | no_answer
+  duration         Int?     // seconds
+  transcript       String?
+  rawRecordingUrl  String?
+
+  summary          CallSummary?
+  insights         CallInsight[]
+
+  @@index([userId])
+  @@index([seniorId])
+  @@index([status])
+}
+
+model CallSummary {
+  id               String   @id @default(uuid())
+  createdAt        DateTime @default(now())
+
+  callId           String   @unique
+  call             Call     @relation(fields: [callId], references: [id])
+
+  mood             String?  // happy | neutral | sad | tired | confused
+  moodScore        Int?     // 1-10
+  engagementScore  Int?     // 1-10
+  summary          String   // 2-3 sentence summary
+  topics           String[] // topics discussed
+  highlights       String[] // memorable moments
+}
+
+model CallInsight {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+
+  callId       String
+  call         Call     @relation(fields: [callId], references: [id])
+
+  type         String   // health_alert | memory_spark | topic | concern
+  content      String
+  severity     String?  // low | medium | high (for health alerts)
+}
+
+model ScheduledCall {
+  id           String    @id @default(uuid())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  seniorId     String
+  senior       Senior    @relation(fields: [seniorId], references: [id])
+
+  frequency    String    // daily | every_other_day | weekly | bi_weekly
+  time         String    // HH:MM in 24h format
+  timezone     String    @default("America/Toronto")
+  language     String    @default("en")
+
+  enabled      Boolean   @default(true)
+  nextCallAt   DateTime?
+  lastCallAt   DateTime?
+
+  calls        Call[]
+
+  @@index([userId])
+  @@index([enabled, nextCallAt])
+}
+
+model UserSubscription {
+  id                       String    @id @default(uuid())
+  createdAt                DateTime  @default(now())
+
+  userId                   String    @unique
+  user                     User      @relation(fields: [userId], references: [id])
+
+  plan                     String    // free | starter | premium
+  status                   String    // active | canceled | past_due
+  creditsBalance           Int       @default(5)
+  monthlyCallLimit         Int       @default(5) // -1 for unlimited
+  currentPeriodEnd         DateTime?
+
+  stripeSubscriptionId     String?
+  stripePriceId            String?
+}
+
+model CreditTransaction {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+
+  amount       Int      // positive = credit, negative = debit
+  type         String   // purchase | call_debit | refund | bonus
+  description  String
+}
+
 model GptResponse {
-  id                        String          @id @default(uuid())
-  createdAt                 DateTime        @default(now())
-  updatedAt                 DateTime        @updatedAt
+  id          String   @id @default(uuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  user                      User            @relation(fields: [userId], references: [id])
-  userId                    String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
 
-  content                   String
+  content    String
 }
 
 model Task {
-  id                        String          @id @default(uuid())
-  createdAt                 DateTime        @default(now())
+  id          String   @id @default(uuid())
+  createdAt  DateTime @default(now())
 
-  user                      User            @relation(fields: [userId], references: [id])
-  userId                    String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
 
-  description               String
-  time                      String          @default("1")
-  isDone                    Boolean         @default(false)
+  description String
+  time       String   @default("1")
+  isDone     Boolean  @default(false)
 }
 
 model File {
-  id                        String          @id @default(uuid())
-  createdAt                 DateTime        @default(now())
+  id          String   @id @default(uuid())
+  createdAt  DateTime @default(now())
 
-  user                      User            @relation(fields: [userId], references: [id])
-  userId                    String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
 
-  name                      String
-  type                      String
-  s3Key                     String
+  name       String
+  type       String
+  s3Key      String
 }
 
 model DailyStats {
-  id                               Int             @id @default(autoincrement())
-  date                             DateTime        @default(now()) @unique
+  id                       Int       @id @default(autoincrement())
+  date                     DateTime  @default(now()) @unique
 
-  totalViews                       Int             @default(0)
-  prevDayViewsChangePercent        String          @default("0")
-  userCount                        Int             @default(0)
-  paidUserCount                    Int             @default(0)
-  userDelta                        Int             @default(0)
-  paidUserDelta                    Int             @default(0)
-  totalRevenue                     Float           @default(0)
-  totalProfit                      Float           @default(0)
+  totalViews               Int       @default(0)
+  prevDayViewsChangePercent String   @default("0")
+  userCount                Int       @default(0)
+  paidUserCount             Int       @default(0)
+  userDelta                 Int       @default(0)
+  paidUserDelta             Int       @default(0)
+  totalRevenue              Float     @default(0)
+  totalProfit               Float     @default(0)
 
-  sources                          PageViewSource[]
+  sources                   PageViewSource[]
 }
 
 model PageViewSource {
   @@id([date, name])
-  name                     String
-  date                     DateTime        @default(now())
+  name       String
+  date       DateTime @default(now())
 
-  dailyStats               DailyStats?     @relation(fields: [dailyStatsId], references: [id])
-  dailyStatsId             Int?
-
-  visitors                 Int
+  dailyStats DailyStats? @relation(fields: [dailyStatsId], references: [id])
+  dailyStatsId Int?
+  visitors   Int
 }
 
 model Logs {
-  id                       Int             @id @default(autoincrement())
-  createdAt                DateTime        @default(now())
-
-  message                  String
-  level                    String
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  message   String
+  level     String
 }
 
 model ContactFormMessage {
-  id                        String          @id @default(uuid())
-  createdAt                 DateTime        @default(now())
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
 
-  user                      User            @relation(fields: [userId], references: [id])
-  userId                    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
 
-  content                   String
-  isRead                    Boolean         @default(false)
-  repliedAt                 DateTime?
+  content   String
+  isRead    Boolean  @default(false)
+  repliedAt DateTime?
 }
