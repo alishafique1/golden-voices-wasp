@@ -12,11 +12,12 @@ export function Hero() {
         <div className="max-w-8xl mx-auto px-6 lg:px-8">
           <div className="lg:mb-18 mx-auto max-w-3xl text-center">
             <h1 className="text-foreground text-5xl font-bold sm:text-6xl">
-              Some <span className="italic">cool</span> words about{" "}
-              <span className="text-gradient-primary">your product</span>
+              Stay connected to your{" "}
+              <span className="italic">loved ones</span> with{" "}
+              <span className="text-gradient-primary">AI-powered daily calls</span>
             </h1>
             <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-lg leading-8">
-              With some more exciting words about your product!
+              Golden Voices Connect calls your elderly family members every day so you can rest easy knowing they are okay. Get real-time mood and health summaries after each call.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button size="lg" variant="outline" asChild>

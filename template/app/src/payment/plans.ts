@@ -6,9 +6,9 @@ export enum SubscriptionStatus {
 }
 
 export enum PaymentPlanId {
-  Hobby = "hobby",
-  Pro = "pro",
-  Credits10 = "credits10",
+  PayAsYouGo = "pay_as_you_go",
+  MonthlyBasic = "monthly_basic",
+  MonthlyPremium = "monthly_premium",
 }
 
 export interface PaymentPlan {
@@ -21,25 +21,25 @@ export type PaymentPlanEffect =
   | { kind: "credits"; amount: number };
 
 export const paymentPlans = {
-  [PaymentPlanId.Hobby]: {
-    id: PaymentPlanId.Hobby,
+  [PaymentPlanId.PayAsYouGo]: {
+    id: PaymentPlanId.PayAsYouGo,
+    effect: { kind: "credits", amount: 0.1 },
+  },
+  [PaymentPlanId.MonthlyBasic]: {
+    id: PaymentPlanId.MonthlyBasic,
     effect: { kind: "subscription" },
   },
-  [PaymentPlanId.Pro]: {
-    id: PaymentPlanId.Pro,
+  [PaymentPlanId.MonthlyPremium]: {
+    id: PaymentPlanId.MonthlyPremium,
     effect: { kind: "subscription" },
-  },
-  [PaymentPlanId.Credits10]: {
-    id: PaymentPlanId.Credits10,
-    effect: { kind: "credits", amount: 10 },
   },
 } as const satisfies Record<PaymentPlanId, PaymentPlan>;
 
 export function prettyPaymentPlanName(planId: PaymentPlanId): string {
   const planToName: Record<PaymentPlanId, string> = {
-    [PaymentPlanId.Hobby]: "Hobby",
-    [PaymentPlanId.Pro]: "Pro",
-    [PaymentPlanId.Credits10]: "10 Credits",
+    [PaymentPlanId.PayAsYouGo]: "$0 Pay As You Go",
+    [PaymentPlanId.MonthlyBasic]: "$29 Basic",
+    [PaymentPlanId.MonthlyPremium]: "$79 Premium",
   };
   return planToName[planId];
 }

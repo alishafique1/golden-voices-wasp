@@ -2,6 +2,17 @@ import Stripe from "stripe";
 import { User } from "wasp/entities";
 import { config } from "wasp/server";
 import { stripeClient } from "./stripeClient";
+import { PaymentPlanId } from "../plans";
+
+/**
+ * Stripe price IDs for Golden Voices plans.
+ * Replace with real Stripe price IDs when available.
+ */
+export const STRIPE_PRICE_IDS: Record<PaymentPlanId, string> = {
+  [PaymentPlanId.PayAsYouGo]: "price_gv_pay_as_you_go",
+  [PaymentPlanId.MonthlyBasic]: "price_gv_basic",
+  [PaymentPlanId.MonthlyPremium]: "price_gv_premium",
+};
 
 /**
  * Returns a Stripe customer for the given User email, creating a customer if none exist.
@@ -34,11 +45,12 @@ export function createStripeCheckoutSession({
   customerId,
   mode,
 }: CreateStripeCheckoutSessionParams): Promise<Stripe.Checkout.Session> {
+  const actualPriceId = priceId ?? STRIPE_PRICE_IDS[PaymentPlanId.PayAsYouGo];
   return stripeClient.checkout.sessions.create({
     customer: customerId,
     line_items: [
       {
-        price: priceId,
+        price: actualPriceId,
         quantity: 1,
       },
     ],

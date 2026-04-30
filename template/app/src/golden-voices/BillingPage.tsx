@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "./DashboardLayout";
 import { getCredits } from "../operations";
+import { generateCheckoutSession } from "wasp/client/operations";
 
 const PLANS = [
   {
@@ -40,6 +41,11 @@ export function BillingPage() {
   useEffect(() => {
     getCredits().then(setCreditsData).finally(() => setLoading(false));
   }, []);
+
+  const onChoosePlan = async (planId: string) => {
+    const { sessionUrl } = await generateCheckoutSession({ planId });
+    window.location.href = sessionUrl;
+  };
 
   return (
     <DashboardLayout>
@@ -120,6 +126,8 @@ export function BillingPage() {
                     ? "bg-amber-500 hover:bg-amber-600 text-white"
                     : "border-2 border-gray-200 hover:border-gray-300 text-gray-700"
                 }`}
+                onClick={() => plan.id !== "pay_as_you_go" && onChoosePlan(plan.id)}
+                disabled={plan.id === "pay_as_you_go"}
               >
                 {plan.id === "pay_as_you_go" ? "Current (No commitment)" : "Choose Plan"}
               </button>

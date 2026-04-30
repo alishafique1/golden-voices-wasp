@@ -11,112 +11,111 @@ import type { GridFeature } from "./components/FeaturesGrid";
 
 export const features: GridFeature[] = [
   {
-    name: "Cool Feature 1",
-    description: "Your feature",
-    emoji: "🤝",
-    href: DocsUrl,
-    size: "small",
-  },
-  {
-    name: "Cool Feature 2",
-    description: "Feature description",
-    emoji: "🔐",
-    href: DocsUrl,
-    size: "small",
-  },
-  {
-    name: "Cool Feature 3",
-    description: "Describe your cool feature here",
-    emoji: "🥞",
-    href: DocsUrl,
-    size: "medium",
-  },
-  {
-    name: "Cool Feature 4",
-    description: "Describe your cool feature here",
-    emoji: "💸",
+    name: "AI-Powered Daily Calls",
+    description: "Our AI calls your loved one every day at a time you choose, providing warm and natural conversations.",
+    emoji: "📞",
     href: DocsUrl,
     size: "large",
   },
   {
-    name: "Cool Feature 5",
-    description: "Describe your cool feature here",
-    emoji: "💼",
-    href: DocsUrl,
-    size: "large",
-  },
-  {
-    name: "Cool Feature 6",
-    description: "It is cool",
-    emoji: "📈",
+    name: "Multi-Language Support",
+    description: "Calls available in English, Urdu, and Hindi to suit your family's preferred language.",
+    emoji: "🌐",
     href: DocsUrl,
     size: "small",
   },
   {
-    name: "Cool Feature 7",
-    description: "Cool feature",
-    emoji: "📧",
+    name: "Family Dashboard",
+    description: "See all your loved ones in one place. Track their mood, health trends, and call history at a glance.",
+    emoji: "👨‍👩‍👧",
+    href: DocsUrl,
+    size: "medium",
+  },
+  {
+    name: "Mood & Health Insights",
+    description: "After each call, receive a summary of your loved one's mood, energy level, and any health concerns noted.",
+    emoji: "💚",
+    href: DocsUrl,
+    size: "medium",
+  },
+  {
+    name: "Easy Setup",
+    description: "No smartphone required for your loved one. Our AI calls any phone number they already have.",
+    emoji: "📱",
     href: DocsUrl,
     size: "small",
   },
   {
-    name: "Cool Feature 8",
-    description: "Describe your cool feature here",
-    emoji: "🤖",
+    name: "Cancel Anytime",
+    description: "No contracts or commitment. Cancel your subscription with one click, no questions asked.",
+    emoji: "🔒",
     href: DocsUrl,
-    size: "medium",
-  },
-  {
-    name: "Cool Feature 9",
-    description: "Describe your cool feature here",
-    emoji: "🚀",
-    href: DocsUrl,
-    size: "medium",
+    size: "small",
   },
 ];
 
 export const testimonials = [
   {
-    name: "Da Boi",
-    role: "Wasp Mascot",
-    avatarSrc: daBoiAvatar,
-    socialUrl: "https://twitter.com/wasplang",
-    quote: "I don't even know how to code. I'm just a plushie.",
-  },
-  {
-    name: "Mr. Foobar",
-    role: "Founder @ Cool Startup",
+    name: "Sarah M.",
+    role: "Daughter living in Chicago",
     avatarSrc: daBoiAvatar,
     socialUrl: "",
-    quote: "This product makes me cooler than I already am.",
+    quote: "Golden Voices Connect gave me peace of mind. My mother in Lahore looks forward to her daily call and I love getting the mood updates.",
   },
   {
-    name: "Jamie",
-    role: "Happy Customer",
+    name: "Raj K.",
+    role: "Son living in London",
+    avatarSrc: daBoiAvatar,
+    socialUrl: "",
+    quote: "The Urdu language support was a game-changer for our family. Dad prefers speaking in his native language and the AI handles it perfectly.",
+  },
+  {
+    name: "Michael T.",
+    role: "Caregiver in Toronto",
     avatarSrc: daBoiAvatar,
     socialUrl: "#",
-    quote: "My cats love it!",
+    quote: "I manage care for several elderly clients. This service helps me stay on top of their wellbeing without being intrusive.",
   },
 ];
 
 export const faqs = [
   {
     id: 1,
-    question: "Whats the meaning of life?",
-    answer: "42.",
-    href: "https://en.wikipedia.org/wiki/42_(number)",
+    question: "How does the AI calling service work?",
+    answer: "You select a phone number for your loved one, choose a daily call time, and set your language preference. Our AI will call at the scheduled time and have a natural conversation. After each call, you'll receive a mood and health summary via the family dashboard.",
+    href: DocsUrl,
+  },
+  {
+    id: 2,
+    question: "What languages are supported?",
+    answer: "Currently, Golden Voices Connect supports English, Urdu, and Hindi. We're working on adding more languages to serve families around the world.",
+    href: DocsUrl,
+  },
+  {
+    id: 3,
+    question: "What if my parent does not have a smartphone?",
+    answer: "No smartphone is needed. Our AI calls any regular phone number, landline or mobile. Your loved one simply answers the phone like any normal call.",
+    href: DocsUrl,
+  },
+  {
+    id: 4,
+    question: "Can I cancel my subscription anytime?",
+    answer: "Yes, you can cancel your subscription at any time with no contracts or commitments. There are no cancellation fees or questions asked.",
+    href: "#",
   },
 ];
 
 export const footerNavigation = {
   app: [
     { name: "Documentation", href: DocsUrl },
-    { name: "Blog", href: BlogUrl },
+    { name: "How It Works", href: DocsUrl },
+    { name: "Pricing", href: "#" },
   ],
   company: [
-    { name: "About", href: "https://wasp.sh" },
-    { name: "Privacy", href: "#" },
+    { name: "About Us", href: "#" },
+    { name: "Privacy Policy", href: "#" },
     { name: "Terms of Service", href: "#" },
+    { name: "Contact", href: "#" },
   ],
 };
 
