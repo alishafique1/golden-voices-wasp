@@ -1,12 +1,5 @@
 import daBoiAvatar from "../client/static/da-boi.webp";
-import kivo from "../client/static/examples/kivo.webp";
-import messync from "../client/static/examples/messync.webp";
-import microinfluencerClub from "../client/static/examples/microinfluencers.webp";
-import promptpanda from "../client/static/examples/promptpanda.webp";
-import reviewradar from "../client/static/examples/reviewradar.webp";
-import scribeist from "../client/static/examples/scribeist.webp";
-import searchcraft from "../client/static/examples/searchcraft.webp";
-import { BlogUrl, DocsUrl } from "../shared/common";
+import { DocsUrl } from "../shared/common";
 import type { GridFeature } from "./components/FeaturesGrid";
 
 export const features: GridFeature[] = [
@@ -56,25 +49,25 @@ export const features: GridFeature[] = [
 
 export const testimonials = [
   {
-    name: "Sarah M.",
-    role: "Daughter living in Chicago",
+    name: "Ayesha R.",
+    role: "Daughter in Toronto, calls her mother in Lahore",
     avatarSrc: daBoiAvatar,
     socialUrl: "",
-    quote: "Golden Voices Connect gave me peace of mind. My mother in Lahore looks forward to her daily call and I love getting the mood updates.",
+    quote: "My mother looks forward to her daily call every morning. The Urdu support means she gets a genuine conversation, not just a voice assistant. I finally have peace of mind.",
   },
   {
-    name: "Raj K.",
-    role: "Son living in London",
+    name: "James T.",
+    role: "Son in Chicago, checks in on his father in Karachi",
     avatarSrc: daBoiAvatar,
     socialUrl: "",
-    quote: "The Urdu language support was a game-changer for our family. Dad prefers speaking in his native language and the AI handles it perfectly.",
+    quote: "The call summaries are incredibly helpful. I can see my father's mood trends over time and know immediately if something seems off. It's like having a daily health check-in without the intrusion.",
   },
   {
-    name: "Michael T.",
-    role: "Caregiver in Toronto",
+    name: "Priya M.",
+    role: "Granddaughter in London, calls grandparents in Delhi",
     avatarSrc: daBoiAvatar,
-    socialUrl: "#",
-    quote: "I manage care for several elderly clients. This service helps me stay on top of their wellbeing without being intrusive.",
+    socialUrl: "",
+    quote: "Setting it up took less than 5 minutes. My grandparents don't need a smartphone — just their regular phone. The AI calls them like a caring family member would.",
   },
 ];
 
@@ -83,83 +76,71 @@ export const faqs = [
     id: 1,
     question: "How does the AI calling service work?",
     answer: "You select a phone number for your loved one, choose a daily call time, and set your language preference. Our AI will call at the scheduled time and have a natural conversation. After each call, you'll receive a mood and health summary via the family dashboard.",
-    href: DocsUrl,
+    href: "#faq",
   },
   {
     id: 2,
     question: "What languages are supported?",
     answer: "Currently, Golden Voices Connect supports English, Urdu, and Hindi. We're working on adding more languages to serve families around the world.",
-    href: DocsUrl,
+    href: "#faq",
   },
   {
     id: 3,
     question: "What if my parent does not have a smartphone?",
     answer: "No smartphone is needed. Our AI calls any regular phone number, landline or mobile. Your loved one simply answers the phone like any normal call.",
-    href: DocsUrl,
+    href: "#faq",
   },
   {
     id: 4,
     question: "Can I cancel my subscription anytime?",
     answer: "Yes, you can cancel your subscription at any time with no contracts or commitments. There are no cancellation fees or questions asked.",
-    href: "#",
+    href: "#pricing",
+  },
+  {
+    id: 5,
+    question: "How is this different from a regular phone call?",
+    answer: "Unlike a regular call, Golden Voices provides a structured daily check-in with AI-generated summaries after each call. You can track mood trends over time, catch early signs of health issues, and ensure consistency — something that's hard to maintain with manual calls.",
+    href: "#faq",
+  },
+  {
+    id: 6,
+    question: "Is the AI conversation natural?",
+    answer: "Yes. The AI is designed to have warm, conversational exchanges. It adapts to your loved one's pace of speech, can handle interruptions and tangents, and switches seamlessly between topics like a real phone call.",
+    href: "#faq",
   },
 ];
 
 export const footerNavigation = {
   app: [
-    { name: "Documentation", href: DocsUrl },
-    { name: "How It Works", href: DocsUrl },
-    { name: "Pricing", href: "#" },
+    { name: "How It Works", href: "#how-it-works" },
+    { name: "Pricing", href: "#pricing" },
+    { name: "FAQ", href: "#faq" },
   ],
   company: [
-    { name: "About Us", href: "#" },
-    { name: "Privacy Policy", href: "#" },
-    { name: "Terms of Service", href: "#" },
-    { name: "Contact", href: "#" },
+    { name: "About", href: "#about" },
+    { name: "Privacy Policy", href: "#privacy" },
+    { name: "Terms of Service", href: "#terms" },
+    { name: "Contact", href: "mailto:hello@goldenvoices.app" },
   ],
 };
 
 export const examples = [
   {
-    name: "Example #1",
-    description: "Describe your example here.",
-    imageSrc: kivo,
+    name: "Family Dashboard",
+    description: "See all your loved ones, their mood trends, and upcoming calls at a glance.",
+    imageSrc: "dashboard",
     href: "#",
   },
   {
-    name: "Example #2",
-    description: "Describe your example here.",
-    imageSrc: messync,
+    name: "Schedule a Call",
+    description: "Set up daily AI calls in minutes. Choose the time, language, and frequency.",
+    imageSrc: "schedule",
     href: "#",
   },
   {
-    name: "Example #3",
-    description: "Describe your example here.",
-    imageSrc: microinfluencerClub,
-    href: "#",
-  },
-  {
-    name: "Example #4",
-    description: "Describe your example here.",
-    imageSrc: promptpanda,
-    href: "#",
-  },
-  {
-    name: "Example #5",
-    description: "Describe your example here.",
-    imageSrc: reviewradar,
-    href: "#",
-  },
-  {
-    name: "Example #6",
-    description: "Describe your example here.",
-    imageSrc: scribeist,
-    href: "#",
-  },
-  {
-    name: "Example #7",
-    description: "Describe your example here.",
-    imageSrc: searchcraft,
+    name: "Call Summary",
+    description: "After every call, receive a mood and health summary right in your dashboard.",
+    imageSrc: "summary",
     href: "#",
   },
 ];

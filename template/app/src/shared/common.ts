@@ -1,2 +1,3 @@
-export const DocsUrl = "https://docs.opensaas.sh";
-export const BlogUrl = "https://docs.opensaas.sh/blog";
+export const DocsUrl = "https://goldenvoices.app";
+export const AppUrl = "https://goldenvoices.app";
+export const BlogUrl = "https://goldenvoices.app/blog";

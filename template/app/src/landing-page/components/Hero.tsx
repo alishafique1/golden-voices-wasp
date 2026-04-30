@@ -1,7 +1,5 @@
 import { Link as WaspRouterLink, routes } from "wasp/client/router";
 import { Button } from "../../client/components/ui/button";
-import openSaasBannerDark from "../../client/static/open-saas-banner-dark.svg";
-import openSaasBannerLight from "../../client/static/open-saas-banner-light.svg";
 
 export function Hero() {
   return (
@@ -33,23 +31,20 @@ export function Hero() {
             </div>
           </div>
           <div className="mt-14 flow-root sm:mt-14">
-            <div className="m-2 hidden justify-center rounded-xl md:flex lg:-m-4 lg:rounded-2xl lg:p-4">
-              <img
-                src={openSaasBannerLight}
-                alt="App screenshot"
-                width={1000}
-                height={530}
-                loading="lazy"
-                className="rounded-md shadow-2xl ring-1 ring-gray-900/10 dark:hidden"
-              />
-              <img
-                src={openSaasBannerDark}
-                alt="App screenshot"
-                width={1000}
-                height={530}
-                loading="lazy"
-                className="hidden rounded-md shadow-2xl ring-1 ring-gray-900/10 dark:block"
-              />
+            <div className="m-2 flex justify-center rounded-xl bg-gradient-to-br from-amber-100 via-orange-50 to-purple-100 md:flex lg:-m-4 lg:rounded-2xl lg:p-4">
+              <div className="flex w-full max-w-3xl flex-col items-center justify-center px-8 py-16 text-center">
+                <div className="mb-4 flex gap-4 text-6xl">
+                  <span>📞</span>
+                  <span>👵</span>
+                  <span>💚</span>
+                </div>
+                <p className="text-lg font-medium text-foreground/80">
+                  Your loved ones deserve to feel connected.
+                </p>
+                <p className="mt-2 text-sm text-foreground/60">
+                  Daily AI calls. Real conversations. Peace of mind.
+                </p>
+              </div>
             </div>
           </div>
         </div>

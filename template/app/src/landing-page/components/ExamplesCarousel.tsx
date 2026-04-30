@@ -159,18 +159,17 @@ function ExampleCard({
         className="w-[280px] overflow-hidden transition-all duration-200 hover:scale-105 sm:w-[320px] md:w-[350px]"
         variant={isCurrent ? "default" : "faded"}
       >
-        <CardContent className="h-full p-0">
-          <img
-            src={example.imageSrc}
-            alt={example.name}
-            className="aspect-video h-auto w-full object-cover object-top"
-          />
-          <div className="p-4">
-            <p className="font-bold">{example.name}</p>
-            <p className="text-muted-foreground text-xs">
-              {example.description}
-            </p>
+        <CardContent className="flex h-full flex-col items-center justify-center p-6 text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            {example.imageSrc === "dashboard" && <span className="text-2xl">📊</span>}
+            {example.imageSrc === "schedule" && <span className="text-2xl">📅</span>}
+            {example.imageSrc === "summary" && <span className="text-2xl">📝</span>}
+            {!["dashboard", "schedule", "summary"].includes(example.imageSrc as string) && <span className="text-2xl">✨</span>}
           </div>
+          <p className="font-bold">{example.name}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {example.description}
+          </p>
         </CardContent>
       </Card>
     </a>
