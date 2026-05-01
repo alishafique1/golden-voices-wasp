@@ -8,6 +8,7 @@ import { fileUploadEnvSchema } from "./file-upload/env";
 import { lemonSqueezyEnvSchema } from "./payment/lemonSqueezy/env";
 import { polarEnvSchema } from "./payment/polar/env";
 import { stripeEnvSchema } from "./payment/stripe/env";
+import { gvEnvValidationSchema } from "./golden-voices/env";
 
 // Wasp merges this schema with its built-in env var validations and uses it
 // to validate `process.env` at server startup. Access the validated env vars
@@ -26,5 +27,6 @@ export const serverEnvValidationSchema = defineEnvValidationSchema(
     ...fileUploadEnvSchema.shape,
     ...plausibleEnvSchema.shape,
     ...googleAnalyticsEnvSchema.shape,
+    ...gvEnvValidationSchema.shape,
   }),
 );
