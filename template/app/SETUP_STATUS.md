@@ -1,6 +1,7 @@
 # Golden Voices Connect — Setup Status
 
-**Last audited:** 2026-05-02
+**Last audited:** 2026-05-02 (updated 2026-05-02 evening)
+**Env vars status:** PARTIAL — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all set in `.env.server`. VAPI keys still missing.
 **Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 
@@ -27,25 +28,29 @@
 
 ## What's Blocked on Env Vars
 
-| Env Var | Blocked By | Impact |
-|---|---|---|
-| `VAPI_PRIVATE_KEY` | Ali | Cannot initiate outbound calls |
-| `VAPI_ASSISTANT_ID` | Ali | Cannot initiate outbound calls |
-| `VAPI_PHONE_NUMBER_ID` | Ali | Cannot initiate outbound calls |
-| `OPENAI_API_KEY` | Ali | AI summary generation fails (call summary is toast) |
-| `RESEND_API_KEY` | Ali | Email notifications not sent |
-| `STRIPE_SECRET_KEY` | Ali | Payment processing broken |
-| `STRIPE_WEBHOOK_SECRET` | Ali | Payment webhook verification fails |
-| `DATABASE_URL` | Ali | App starts but DB is unreachable |
-| `CLERK_PUBLISHABLE_KEY` | Ali | Clerk not yet wired in main.wasp anyway |
-| `CLERK_SECRET_KEY` | Ali | Clerk not yet wired in main.wasp anyway |
+**Status as of 2026-05-02 evening:** Partial — `.env.server` exists with real values for DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS.
 
-### Priority order for Ali to provide:
-1. `DATABASE_URL` — everything fails without DB
-2. `VAPI_PRIVATE_KEY` + `VAPI_ASSISTANT_ID` + `VAPI_PHONE_NUMBER_ID` — core product loop
-3. `OPENAI_API_KEY` — call summaries
-4. `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` — billing
-5. `RESEND_API_KEY` — user notifications
+| Env Var | Status | Blocked By | Impact |
+|---|---|---|---|
+| `DATABASE_URL` | ✅ Set | — | DB connection ready |
+| `OPENAI_API_KEY` | ✅ Set | — | AI summaries ready |
+| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready |
+| `STRIPE_SECRET_KEY` | ✅ Set | — | Payment processing ready |
+| `STRIPE_WEBHOOK_SECRET` | ✅ Set | — | Webhook verification ready |
+| `VAPI_PRIVATE_KEY` | ❌ Missing | Ali | Cannot initiate outbound calls |
+| `VAPI_ASSISTANT_ID` | ❌ Missing | Ali | Cannot initiate outbound calls |
+| `VAPI_PHONE_NUMBER_ID` | ❌ Missing | Ali | Cannot initiate outbound calls |
+| `CLERK_PUBLISHABLE_KEY` | ❌ Missing | Ali | Clerk not wired in main.wasp anyway |
+| `CLERK_SECRET_KEY` | ❌ Missing | Ali | Clerk not wired in main.wasp anyway |
+| `ADMIN_EMAILS` | ✅ Set | — | Admin access configured |
+
+### VAPI keys needed (Ali to provide):
+1. `VAPI_PRIVATE_KEY` — from https://dashboard.vapi.ai → API Keys
+2. `VAPI_ASSISTANT_ID` — create an outbound assistant in Vapi dashboard
+3. `VAPI_PHONE_NUMBER_ID` — a Vapi-provisioned outbound phone number
+
+### Wasp CLI is broken on VPS
+The Wasp CLI (`/usr/bin/wasp`) is installed but missing its platform binary (`@wasp.sh/wasp-cli-linux-x64-glibc` not installed). `wasp start` fails with "Can't locate the correct executable for your platform." This blocks running `wasp db migrate-dev` and `wasp start` locally. **Fix:** Ali needs to run `npm install -g @wasp.sh/wasp-cli-linux-x64-glibc` on the VPS (or install locally in the project).
 
 ---
 
@@ -105,29 +110,43 @@ Schema is complete for the VAPI calling flow. No new models needed.
 
 ---
 
-## What Can Ship Immediately Once Vars Arrive
+## What Can Ship Immediately Once VAPI Vars Arrive
 
-Once Ali provides the 5 priority env vars, the following are ready to work with zero code changes:
+**Status:** All non-VAPI infrastructure is ready. Only VAPI keys block the core calling loop.
 
 ```
-DATABASE_URL               → DB connection + Prisma migrations
-VAPI_PRIVATE_KEY           → outbound calls
-VAPI_ASSISTANT_ID          → outbound calls
-VAPI_PHONE_NUMBER_ID      → outbound calls
-OPENAI_API_KEY            → AI summaries
+DATABASE_URL               ✅ → DB connection + Prisma migrations
+OPENAI_API_KEY             ✅ → AI summaries ready
+RESEND_API_KEY             ✅ → Email notifications ready
+STRIPE_SECRET_KEY          ✅ → Payment processing ready
+STRIPE_WEBHOOK_SECRET      ✅ → Webhook verification ready
+VAPI_PRIVATE_KEY           ❌ → BLOCKING: outbound calls
+VAPI_ASSISTANT_ID          ❌ → BLOCKING: outbound calls
+VAPI_PHONE_NUMBER_ID       ❌ → BLOCKING: outbound calls
 ```
 
-### After env vars arrive, run:
+### After VAPI keys arrive, run on the VPS:
 ```bash
 cd /root/Golden-Voices-Wasp/template/app
-wasp db migrate-dev       # apply schema
-npx wasp start             # start dev server
+
+# Fix Wasp CLI first (if not fixed already)
+npm install -g @wasp.sh/wasp-cli-linux-x64-glibc
+
+# Apply DB migrations
+wasp db migrate-dev
+
+# Start the app
+npx wasp start
+```
+
+### Wasp CLI fix (one-time on VPS):
+```bash
+npm install -g @wasp.sh/wasp-cli-linux-x64-glibc
 ```
 
 ### Still needs code work (not env-blocked):
-- [ ] Wire Clerk auth in `main.wasp` (auth config) — currently using Wasp built-in email/password
+- [ ] Wire Clerk auth in `main.wasp` — currently using Wasp built-in email/password
 - [ ] Stripe checkout session creation (`src/payment/operations.ts`)
-- [ ] `CLERK_*` env vars are in schema but Clerk is not in main.wasp auth block
 - [ ] Replace Lemon Squeezy references in `main.wasp` with Stripe-only
 - [ ] Landing page redesign (GH issue #backlog)
 - [ ] Vercel deploy (GH issue #backlog)
