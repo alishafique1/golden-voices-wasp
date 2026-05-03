@@ -1,12 +1,12 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-03 07:07 UTC
-**Env vars status:** MOSTLY SET — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all confirmed in `.env.server`. **VAPI keys still missing.**
+**Last updated:** 2026-05-03 11:17 UTC
+**Env vars status:** 5/6 GROUPS SET — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, ADMIN_EMAILS confirmed in `.env.server`. **VAPI keys still missing.**
 **Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe / GPT-4o
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes` — push with `git push origin hermes`
-**SSH key:** `id_ed25519_goldenvoices` → verified working
-**Wasp requirement:** `^0.23.0` — VPS has 0.21.1 (Ali must run `npm install -g @wasp.sh/wasp-cli@^0.23.0`)
+**SSH key:** `id_ed25519_goldenvoices` — verified working
+**Wasp requirement:** `^0.23.0` — VPS has **no version cached** (`wasp --version` returns CLI help only). Ali must run `npm install -g @wasp.sh/wasp-cli@^0.23.0`
 
 ---
 
@@ -25,21 +25,32 @@
 | Stripe billing pages | ✅ | `src/golden-voices/BillingPage.tsx` |
 | Dashboard pages | ✅ | 10 React pages: Dashboard, CallDetail, Calls, NewSenior, EditSenior, Schedule, Billing, SeniorsList |
 | PgBoss job executor | ✅ | Configured in `main.wasp` for `generateCallSummary` + `processScheduledCalls` |
-| envValidationSchema wired | ✅ | `src/env.ts` merges `gvEnvValidationSchema` — all 12 GV env vars validated at startup |
+| envValidationSchema wired | ✅ | `src/env.ts` merges `gvEnvValidationSchema` — all GV env vars validated at startup |
 | `main.wasp` syntax | ✅ | All commas present — no compile errors from syntax |
 | Email from-address | ✅ | `no-reply@goldenvoices.app` — matches Wasp auth from-address |
+| `.env.server.example` | ✅ | Complete, all 30+ vars documented with comments |
+| `.env.server` (actual) | ✅ | DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all present |
 
 ---
 
 ## What's Blocked on Env Vars
 
-`.env.server` exists at `template/app/.env.server` with real values confirmed:
+`.env.server` confirmed with these vars:
+
+```
+DATABASE_URL=postgresql://golden_app:***@host.docker.internal:54320/shared_apps?schema=golden_voices
+OPENAI_API_KEY=***
+RESEND_API_KEY=***
+STRIPE_SECRET_KEY=***
+STRIPE_WEBHOOK_SECRET=***
+ADMIN_EMAILS=ali@socialdots.ca
+```
 
 | Env Var | `.env.server` | Blocked By | Impact |
 |---|---|---|---|
 | `DATABASE_URL` | ✅ Set | — | DB connection ready |
 | `OPENAI_API_KEY` | ✅ Set | — | AI summaries ready |
-| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready (BUG FIXED this session) |
+| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready |
 | `STRIPE_SECRET_KEY` | ✅ Set | — | Payment processing ready |
 | `STRIPE_WEBHOOK_SECRET` | ✅ Set | — | Webhook verification ready |
 | `ADMIN_EMAILS` | ✅ Set | — | Admin access: `ali@socialdots.ca` |
@@ -54,8 +65,8 @@
 2. `VAPI_ASSISTANT_ID` → create an outbound assistant in Vapi dashboard
 3. `VAPI_PHONE_NUMBER_ID` → a Vapi-provisioned outbound phone number
 
-### Wasp CLI version mismatch — Ali must run one command
-The VPS Wasp CLI is version **0.21.1**. The project requires **^0.23.0**.
+### Wasp CLI — Ali must run one command
+The VPS Wasp CLI needs to be upgraded to `^0.23.0`. **Ali must run this manually** (tirith blocks automated `npm install -g`):
 
 ```bash
 npm install -g @wasp.sh/wasp-cli@^0.23.0
@@ -68,8 +79,6 @@ wasp db migrate-dev
 wasp start
 ```
 
-**Note:** `npm install -g @wasp.sh/wasp-cli@^0.23.0` is blocked by tirith scanner when run via Hermes. Ali must run this manually in an interactive shell.
-
 ---
 
 ## Prisma Schema Audit — Complete
@@ -78,7 +87,6 @@ wasp start
 `User`, `Senior`, `Call`, `CallSummary`, `CallInsight`, `ScheduledCall`, `UserSubscription`, `CreditTransaction`
 
 ### VAPI calling flow — data model trace
-
 ```
 User
   └── seniors[] → Senior (phone, language, relationship, notes)
@@ -130,7 +138,7 @@ The only minor gap: `ContactFormMessage` exists in schema but has no relation fi
 ```
 DATABASE_URL               ✅ → DB connection + migrations ready
 OPENAI_API_KEY             ✅ → AI summaries ready
-| RESEND_API_KEY             ✅ → Email notifications ready |
+RESEND_API_KEY             ✅ → Email notifications ready
 STRIPE_SECRET_KEY          ✅ → Payment processing ready
 STRIPE_WEBHOOK_SECRET      ✅ → Webhook verification ready
 VAPI_PRIVATE_KEY           ❌ → BLOCKING: outbound calls
@@ -139,12 +147,11 @@ VAPI_PHONE_NUMBER_ID       ❌ → BLOCKING: outbound calls
 ```
 
 ### After Ali provides VAPI keys + runs Wasp CLI upgrade:
-
 ```bash
 # 1. Ali runs in interactive shell (tirith blocks automated):
 npm install -g @wasp.sh/wasp-cli@^0.23.0
 
-# 2. Hermes then runs:
+# 2. Then Hermes can run:
 cd /root/Golden-Voices-Wasp/template/app
 wasp db migrate-dev
 wasp start
@@ -153,7 +160,6 @@ wasp start
 ### Still needs code work (not env-blocked)
 - [ ] Clerk auth — wire into `main.wasp` auth block (currently using Wasp built-in email/password)
 - [ ] Stripe checkout session creation — `src/payment/operations.ts` needs full Stripe checkout flow
-- [ ] Replace Lemon Squeezy references in `main.wasp` with Stripe-only (already clean — LS vars are optional in env schema)
 - [ ] Resend domain verification + env-driven `FROM_EMAIL`
 - [ ] Landing page redesign (GH issue backlog)
 - [ ] Vercel deploy (GH issue backlog)
@@ -180,6 +186,5 @@ Current branch: `hermes`
 
 ## Last Commit
 ```
-<this session> Golden Voices: refresh SETUP_STATUS.md — full codebase audit, VAPI-only blockers, Wasp CLI fix documented
+<this session> Golden Voices: SETUP_STATUS.md refreshed — 2026-05-03 11:17 UTC, VAPI still missing, Wasp CLI upgrade needed
 ```
-
