@@ -1,8 +1,9 @@
 # Golden Voices Connect — Setup Status
 
-**Last Audit:** 2026-05-03 (refreshed)
+**Last Audit:** 2026-05-03T18:19 UTC
 **Branch:** `hermes`
 **Local:** `/root/Golden-Voices-Wasp`
+**Wasp CLI:** 0.21.1 (needs upgrade to ^0.23.0 — Ali manual)
 
 ---
 
@@ -10,51 +11,62 @@
 
 ### Core Infrastructure
 - **10 React pages** built (Dashboard, CallDetail, Calls, NewSenior, EditSenior, Schedule, Billing, LandingPage, Login, Signup)
-- **Prisma schema** — 8 models: User, Senior, Call, CallSummary, CallInsight, ScheduledCall, UserSubscription, CreditTransaction
+- **Prisma schema** — 13 models: User, Senior, Call, CallSummary, CallInsight, ScheduledCall, UserSubscription, CreditTransaction, GptResponse, Task, File, DailyStats, PageViewSource, Logs, ContactFormMessage
 - **VAPI webhook** — `POST /webhooks/vapi` handles `call-start`, `call-end`, `status-update`, `conversation-update`
 - **AI call summaries** — `generateCallSummary` job triggered on call-end via PgBoss, calls GPT-4o-mini
 - **Resend email** — `sendCallCompletedEmail()` sends branded HTML email after each completed call
-- **PgBoss scheduling** — `processScheduledCalls` job runs every 5 minutes (`*/5 * * * *`)
+- **PgBoss scheduling** — `processScheduledCalls` job runs every 5 minutes
 - **Credit/billing** — UserSubscription, CreditTransaction, deductCredit() logic, Stripe webhook handler
-- **Stripe webhook** — wired at `POST /payments-webhook` (invoice.paid, customer.subscription.updated/deleted)
+- **Stripe webhook** — registered at `POST /payments-webhook`
 - **Wasp email/password auth** — active; Clerk vars declared but not wired
 - **Env validation schema** — `gvEnvValidationSchema` in `src/golden-voices/env.ts`
 
 ### Git
 - SSH deploy key verified (`id_ed25519_goldenvoices` → `golden-voices-wasp`)
 - Branch: `hermes` (not `main`)
-- Push verified: `git push origin hermes` works
+- Push: `git push origin hermes` works
 
 ---
 
 ## What's Blocked
 
-### P0 — Cannot start app
+### P0 — Cannot compile/start app
 
 | Blocker | Status |
 |---------|--------|
-| **Wasp CLI version mismatch** | VPS has `0.21.1`, project requires `^0.23.0`. One cmd: `npm install -g @wasp.sh/wasp-cli@^0.23.0` — tirith blocks automated install, **@ali must run manually** |
-| **VAPI keys missing** | `VAPI_PRIVATE_KEY`, `VAPI_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID` — without these, outbound calls cannot be initiated (app can start, but no calls work) |
+| **Wasp CLI version mismatch** | VPS has `0.21.1`, project requires `^0.23.0`. Ali must run: `npm install -g @wasp.sh/wasp-cli@^0.23.0` (tirth blocks automated install) |
+| **VAPI keys missing** | `VAPI_PRIVATE_KEY`, `VAPI_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID` — app compiles but outbound calls fail without these |
 
 ### P1 — Partially working
 
 | Var | Status |
 |-----|--------|
-| `DATABASE_URL` | Set in `.env.server` — pointing to `host.docker.internal:54320/shared_apps?schema=golden_voices` |
+| `DATABASE_URL` | Set in `.env.server` — `host.docker.internal:54320/shared_apps?schema=golden_voices` |
 | `OPENAI_API_KEY` | Set in `.env.server` |
 | `RESEND_API_KEY` | Set in `.env.server` |
 | `STRIPE_SECRET_KEY` | Set in `.env.server` |
 | `STRIPE_WEBHOOK_SECRET` | Set in `.env.server` |
+| `ADMIN_EMAILS` | Set in `.env.server` — `ali@socialdots.ca` |
 | `CLERK_PUBLISHABLE_KEY` | Not set — Clerk not wired (Wasp email auth is active) |
 | `CLERK_SECRET_KEY` | Not set — Clerk not wired |
 | `STRIPE_PUBLISHABLE_KEY` | Not set — Stripe checkout UI may not work |
 | `PAYMENTS_STARTER_PLAN_PRICE_ID` | Not set — Stripe billing plans not configured |
+| `PAYMENTS_PREMIUM_PLAN_PRICE_ID` | Not set |
+
+---
+
+## Env Var Arrival Log
+
+| Date | Vars That Arrived |
+|------|-------------------|
+| 2026-05-02 | DB, OpenAI, Resend, Stripe |
+| 2026-05-03 14:19 UTC | Still waiting: VAPI keys, Wasp CLI upgrade |
 
 ---
 
 ## Schema Audit
 
-### Prisma Models — Complete
+### Prisma Models — Complete (13 models)
 
 ```
 User
@@ -62,7 +74,11 @@ User
   ├── calls (1:N)
   ├── scheduledCalls (1:N)
   ├── userSubscriptions (1:N)
-  └── creditTransactions (1:N)
+  ├── creditTransactions (1:N)
+  ├── gptResponses (1:N)
+  ├── contactFormMessages (1:N)
+  ├── tasks (1:N)
+  └── files (1:N)
 
 Senior
   ├── calls (1:N)
@@ -78,15 +94,25 @@ ScheduledCall
   ├── calls (1:N)
   ├── user (N:1 User)
   └── senior (N:1 Senior)
+
+UserSubscription (standalone — no relation to Stripe metadata kept in sync)
+CreditTransaction
+GptResponse
+Task
+File
+DailyStats
+PageViewSource
+Logs
+ContactFormMessage
 ```
 
-### Missing Models — None identified for VAPI calling flow
+### Missing Models / Gaps
 
-### Potential Gaps
 1. **`Call.rawRecordingUrl`** is String — needs real S3/storage URL (file upload not wired yet)
 2. **`Senior.notes`** is free-text String — could be JSON for structured health/interest data
 3. **`User.clerkUserId`** missing — if migrating fully to Clerk, add `@unique` field
-4. **No `ScheduledCall.vapiCallSid`** — if a scheduled call fails mid-way, no way to track the Vapi SID back to the ScheduledCall (Call record tracks it)
+4. **`ScheduledCall.vapiCallSid`** missing — if a scheduled call fails mid-way, no way to track the Vapi SID back to the ScheduledCall
+5. **`UserSubscription` not kept in sync** — Stripe webhook updates `User.subscriptionStatus` but `UserSubscription` record may go stale
 
 ---
 
@@ -104,7 +130,7 @@ ScheduledCall
 ### Hardcoded Strings
 | String | Location |
 |--------|----------|
-| `"Golden Voices"` | Header logo — brand name, no i18n |
+| `"Golden Voices"` | Header logo — brand name |
 | `"no-reply@goldenvoices.app"` | From address |
 | `"Daily connection for the people who matter most"` | Tagline in email header |
 | `"Your call with ${seniorName} is complete"` | Subject + headline |
@@ -115,15 +141,6 @@ ScheduledCall
 - [ ] Low credits warning email
 - [ ] Subscription expiry notice
 - [ ] Weekly summary digest
-
----
-
-## Env Var Arrival Log
-
-| Date | Vars That Arrived |
-|------|-------------------|
-| 2026-05-02 | DB, OpenAI, Resend, Stripe |
-| 2026-05-03 | Still waiting: VAPI keys |
 
 ---
 
@@ -139,17 +156,16 @@ ScheduledCall
 ### Needs work before production:
 1. **VAPI assistant configuration** — create AI assistant in Vapi dashboard (en/ur/hi prompts, voice, greeting)
 2. **Resend domain verification** — `goldenvoices.app` must be verified at https://resend.com/domains
-3. **Stripe billing plans** — configure products at `PAYMENTS_STARTER_PLAN_PRICE_ID` / `PAYMENTS_PREMIUM_PLAN_PRICE_ID`
+3. **Stripe billing plans** — configure products, then set `PAYMENTS_STARTER_PLAN_PRICE_ID` / `PAYMENTS_PREMIUM_PLAN_PRICE_ID`
 4. **Clerk SSO** — decide: keep Wasp email auth or migrate to Clerk
 5. **S3/file uploads** — `Call.rawRecordingUrl` needs real storage
 6. **Production deployment** — Vercel, Railway, or Fly.io
-7. **Wasp CLI upgrade** — `@ali must run: npm install -g @wasp.sh/wasp-cli@^0.23.0`
 
 ---
 
 ## Action Items for @ali
 
-- [ ] **Run Wasp CLI upgrade manually** on VPS: `npm install -g @wasp.sh/wasp-cli@^0.23.0`
+- [ ] **Run Wasp CLI upgrade manually on VPS:** `npm install -g @wasp.sh/wasp-cli@^0.23.0`
 - [ ] **Set VAPI keys** in `.env.server` — from https://app.vapi.ai:
   - `VAPI_PRIVATE_KEY`
   - `VAPI_ASSISTANT_ID` (create outbound assistant with en/ur/hi prompts)
