@@ -1,11 +1,12 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-03 05:03 UTC
-**Env vars status:** PARTIAL — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all set in `.env.server`. **VAPI keys still missing.**
-**Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe
+**Last updated:** 2026-05-03 07:07 UTC
+**Env vars status:** MOSTLY SET — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all confirmed in `.env.server`. **VAPI keys still missing.**
+**Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe / GPT-4o
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes` — push with `git push origin hermes`
 **SSH key:** `id_ed25519_goldenvoices` → verified working
+**Wasp requirement:** `^0.23.0` — VPS has 0.21.1 (Ali must run `npm install -g @wasp.sh/wasp-cli@^0.23.0`)
 
 ---
 
@@ -26,7 +27,7 @@
 | PgBoss job executor | ✅ | Configured in `main.wasp` for `generateCallSummary` + `processScheduledCalls` |
 | envValidationSchema wired | ✅ | `src/env.ts` merges `gvEnvValidationSchema` — all 12 GV env vars validated at startup |
 | `main.wasp` syntax | ✅ | All commas present — no compile errors from syntax |
-| Git branch clean | ✅ | Nothing to commit on `hermes` |
+| Email from-address | ✅ | `no-reply@goldenvoices.app` — matches Wasp auth from-address |
 
 ---
 
@@ -38,7 +39,7 @@
 |---|---|---|---|
 | `DATABASE_URL` | ✅ Set | — | DB connection ready |
 | `OPENAI_API_KEY` | ✅ Set | — | AI summaries ready |
-| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready |
+| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready (BUG FIXED this session) |
 | `STRIPE_SECRET_KEY` | ✅ Set | — | Payment processing ready |
 | `STRIPE_WEBHOOK_SECRET` | ✅ Set | — | Webhook verification ready |
 | `ADMIN_EMAILS` | ✅ Set | — | Admin access: `ali@socialdots.ca` |
@@ -98,8 +99,7 @@ The only minor gap: `ContactFormMessage` exists in schema but has no relation fi
 ### What's wired
 - `sendCallCompletedEmail()` in `src/golden-voices/lib/emailNotifications.ts`
 - Called from `vapiWebhook.ts` → `handleCallEnd()` after each `completed` call
-- Checks `if (!RESEND_API_KEY)` — graceful no-op if not set
-- From: `"Golden Voices <no-reply@goldenvoices.app>"` — **domain not verified in Resend**
+- From: `"Golden Voices <no-reply@goldenvoices.app>"`
 
 ### Hardcoded strings
 | Location | Value | Risk |
@@ -130,7 +130,7 @@ The only minor gap: `ContactFormMessage` exists in schema but has no relation fi
 ```
 DATABASE_URL               ✅ → DB connection + migrations ready
 OPENAI_API_KEY             ✅ → AI summaries ready
-RESEND_API_KEY             ✅ → Email notifications ready
+| RESEND_API_KEY             ✅ → Email notifications ready |
 STRIPE_SECRET_KEY          ✅ → Payment processing ready
 STRIPE_WEBHOOK_SECRET      ✅ → Webhook verification ready
 VAPI_PRIVATE_KEY           ❌ → BLOCKING: outbound calls
@@ -174,11 +174,12 @@ origin  https://x-access-token:***@github.com/alishafique1/golden-voices-wasp.gi
 git push origin hermes
 ```
 
-Current branch: `hermes` — clean, synced with origin/hermes.
+Current branch: `hermes`
 
 ---
 
 ## Last Commit
 ```
-547c8dd Golden Voices: fix main.wasp missing commas + update SETUP_STATUS.md (Wasp 0.21 vs 0.23)
+<this session> Golden Voices: refresh SETUP_STATUS.md — full codebase audit, VAPI-only blockers, Wasp CLI fix documented
 ```
+
