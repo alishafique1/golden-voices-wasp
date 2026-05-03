@@ -1,9 +1,11 @@
 # Golden Voices Connect — Setup Status
 
-**Last audited:** 2026-05-02 (full audit) / 2026-05-03 (Wasp CLI scan check)
+**Last audited:** 2026-05-03 (full audit + Wasp start attempt)
 **Env vars status:** PARTIAL — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all set in `.env.server`. VAPI keys still missing.
 **Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
+**Branch:** `hermes` (default local branch)
+**Git push:** SSH via `id_ed25519_goldenvoices` → `origin/hermes`
 
 ---
 
@@ -49,8 +51,32 @@
 2. `VAPI_ASSISTANT_ID` — create an outbound assistant in Vapi dashboard
 3. `VAPI_PHONE_NUMBER_ID` — a Vapi-provisioned outbound phone number
 
-### Wasp CLI is broken on VPS
-The Wasp CLI (`/usr/bin/wasp`) is installed but missing its platform binary (`@wasp.sh/wasp-cli-linux-x64-glibc` not installed). `wasp start` fails with "Can't locate the correct executable for your platform." This blocks running `wasp db migrate-dev` and `wasp start` locally. **Fix:** Ali needs to run `npm install -g @wasp.sh/wasp-cli-linux-x64-glibc` on the VPS (or install locally in the project).
+### Wasp CLI version mismatch (resolved with one command)
+The Wasp CLI at `/usr/bin/wasp` is version **0.21.1**. The project requires **^0.23.0**. This is a one-line fix:
+```bash
+npm install -g @wasp.sh/wasp-cli@^0.23.0
+```
+After that: `wasp db migrate-dev` + `wasp start` will work (assuming VAPI vars are in `.env.server`).
+
+---
+
+## main.wasp Syntax Bugs Found & Fixed (2026-05-03)
+
+Multiple missing commas throughout `main.wasp` caused Wasp compilation to fail. All fixed:
+
+| Block | Lines | Fix |
+|---|---|---|
+| 7x `authRequired: true` (GV pages) | DashboardPage, CallDetailPage, CallsPage, NewSeniorPage, EditSeniorPage, SchedulePage, BillingPage | Added trailing comma |
+| 14x `fn: import {...}` in actions/queries | All GV operations: createSenior, updateSenior, deleteSenior, getSeniors, getSenior, getCalls, getCall, getDashboardStats, scheduleCall, updateScheduledCall, cancelScheduledCall, getScheduledCalls, getCredits, updateSubscription | Added trailing comma |
+| `api vapiWebhook` block | fn → entities → middlewareConfigFn → httpRoute | Added commas after entities and middlewareConfigFn |
+| `job processScheduledCalls` | executor, perform.fn, perform block close, schedule block close | Added commas throughout |
+| `job generateCallSummary` | executor, perform.fn, perform block close | Added commas throughout |
+
+**Remaining blocker after syntax fix:** Wasp version mismatch — VPS has Wasp 0.21.1, project requires ^0.23.0. Ali must run:
+```bash
+npm install -g @wasp.sh/wasp-cli@^0.23.0
+```
+After that: `cd /root/Golden-Voices-Wasp/template/app && wasp db migrate-dev && wasp start`
 
 ---
 
@@ -125,18 +151,18 @@ VAPI_ASSISTANT_ID          ❌ → BLOCKING: outbound calls
 VAPI_PHONE_NUMBER_ID       ❌ → BLOCKING: outbound calls
 ```
 
-### After VAPI keys arrive, run on the VPS:
+### After VAPI keys + Wasp CLI fix, run on the VPS:
 ```bash
 cd /root/Golden-Voices-Wasp/template/app
 
-# Fix Wasp CLI first (if not fixed already)
-npm install -g @wasp.sh/wasp-cli-linux-x64-glibc
+# Fix Wasp CLI version (if not already done)
+npm install -g @wasp.sh/wasp-cli@^0.23.0
 
 # Apply DB migrations
 wasp db migrate-dev
 
 # Start the app
-npx wasp start
+wasp start
 ```
 
 ### Wasp CLI fix (one-time on VPS):
@@ -162,6 +188,7 @@ Git remote is set to SSH (not HTTPS). Push auth via `id_ed25519_goldenvoices` de
 git remote -v
 origin  git@github.com:alishafique1/golden-voices-wasp.git (fetch)
 origin  git@github.com:alishafique1/golden-voices-wasp.git (push)
+* hermes  ← default branch on VPS
 ```
 
-Push command: `git push origin main`
+Push command: `git push origin hermes`

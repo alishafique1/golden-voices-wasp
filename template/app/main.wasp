@@ -311,141 +311,141 @@ page NotFoundPage {
 //#region Golden Voices — Pages
 route DashboardRoute { path: "/dashboard", to: DashboardPage }
 page DashboardPage {
-  authRequired: true
+  authRequired: true,
   component: import { DashboardPage } from "@src/golden-voices/DashboardPage"
 }
 
 route CallDetailRoute { path: "/dashboard/calls/:callId", to: CallDetailPage }
 page CallDetailPage {
-  authRequired: true
+  authRequired: true,
   component: import { CallDetailPage } from "@src/golden-voices/CallDetailPage"
 }
 
 route CallsRoute { path: "/dashboard/calls", to: CallsPage }
 page CallsPage {
-  authRequired: true
+  authRequired: true,
   component: import { CallsPage } from "@src/golden-voices/CallsPage"
 }
 
 route NewSeniorRoute { path: "/dashboard/seniors/new", to: NewSeniorPage }
 page NewSeniorPage {
-  authRequired: true
+  authRequired: true,
   component: import { NewSeniorPage } from "@src/golden-voices/NewSeniorPage"
 }
 
 route EditSeniorRoute { path: "/dashboard/seniors/:seniorId/edit", to: EditSeniorPage }
 page EditSeniorPage {
-  authRequired: true
+  authRequired: true,
   component: import { EditSeniorPage } from "@src/golden-voices/EditSeniorPage"
 }
 
 route ScheduleRoute { path: "/dashboard/schedule", to: SchedulePage }
 page SchedulePage {
-  authRequired: true
+  authRequired: true,
   component: import { SchedulePage } from "@src/golden-voices/SchedulePage"
 }
 
 route BillingRoute { path: "/dashboard/billing", to: BillingPage }
 page BillingPage {
-  authRequired: true
+  authRequired: true,
   component: import { BillingPage } from "@src/golden-voices/BillingPage"
 }
 //#endregion
 
 //#region Golden Voices — Senior Operations
 action createSenior {
-  fn: import { createSenior } from "@src/golden-voices/operations"
+  fn: import { createSenior } from "@src/golden-voices/operations",
   entities: [User, Senior]
 }
 action updateSenior {
-  fn: import { updateSenior } from "@src/golden-voices/operations"
+  fn: import { updateSenior } from "@src/golden-voices/operations",
   entities: [User, Senior]
 }
 action deleteSenior {
-  fn: import { deleteSenior } from "@src/golden-voices/operations"
+  fn: import { deleteSenior } from "@src/golden-voices/operations",
   entities: [User, Senior]
 }
 query getSeniors {
-  fn: import { getSeniors } from "@src/golden-voices/operations"
+  fn: import { getSeniors } from "@src/golden-voices/operations",
   entities: [User, Senior]
 }
 query getSenior {
-  fn: import { getSenior } from "@src/golden-voices/operations"
+  fn: import { getSenior } from "@src/golden-voices/operations",
   entities: [User, Senior, ScheduledCall]
 }
 //#endregion
 
 //#region Golden Voices — Call Operations
 query getCalls {
-  fn: import { getCalls } from "@src/golden-voices/operations"
+  fn: import { getCalls } from "@src/golden-voices/operations",
   entities: [User, Call]
 }
 query getCall {
-  fn: import { getCall } from "@src/golden-voices/operations"
+  fn: import { getCall } from "@src/golden-voices/operations",
   entities: [User, Call, CallSummary, CallInsight]
 }
 query getDashboardStats {
-  fn: import { getDashboardStats } from "@src/golden-voices/operations"
+  fn: import { getDashboardStats } from "@src/golden-voices/operations",
   entities: [User, Call, Senior, UserSubscription, CreditTransaction]
 }
 //#endregion
 
 //#region Golden Voices — Schedule Operations
 action scheduleCall {
-  fn: import { scheduleCall } from "@src/golden-voices/operations"
+  fn: import { scheduleCall } from "@src/golden-voices/operations",
   entities: [User, Senior, ScheduledCall]
 }
 action updateScheduledCall {
-  fn: import { updateScheduledCall } from "@src/golden-voices/operations"
+  fn: import { updateScheduledCall } from "@src/golden-voices/operations",
   entities: [User, Senior, ScheduledCall]
 }
 action cancelScheduledCall {
-  fn: import { cancelScheduledCall } from "@src/golden-voices/operations"
+  fn: import { cancelScheduledCall } from "@src/golden-voices/operations",
   entities: [User, ScheduledCall]
 }
 query getScheduledCalls {
-  fn: import { getScheduledCalls } from "@src/golden-voices/operations"
+  fn: import { getScheduledCalls } from "@src/golden-voices/operations",
   entities: [User, Senior, ScheduledCall]
 }
 //#endregion
 
 //#region Golden Voices — Credits & Billing
 query getCredits {
-  fn: import { getCredits } from "@src/golden-voices/operations"
+  fn: import { getCredits } from "@src/golden-voices/operations",
   entities: [User, UserSubscription, CreditTransaction]
 }
 action updateSubscription {
-  fn: import { updateSubscription } from "@src/golden-voices/operations"
+  fn: import { updateSubscription } from "@src/golden-voices/operations",
   entities: [User, UserSubscription]
 }
 //#endregion
 
 //#region Vapi Webhook
 api vapiWebhook {
-  fn: import { vapiWebhook } from "@src/golden-voices/vapiWebhook"
-  entities: [User, Call, CallSummary, CallInsight, Senior, ScheduledCall, CreditTransaction]
-  middlewareConfigFn: import { vapiWebhookMiddlewareConfig } from "@src/golden-voices/vapiWebhook"
+  fn: import { vapiWebhook } from "@src/golden-voices/vapiWebhook",
+  entities: [User, Call, CallSummary, CallInsight, Senior, ScheduledCall, CreditTransaction],
+  middlewareConfigFn: import { vapiWebhookMiddlewareConfig } from "@src/golden-voices/vapiWebhook",
   httpRoute: (POST, "/webhooks/vapi")
 }
 //#endregion
 
 //#region Cron Jobs
 job processScheduledCalls {
-  executor: PgBoss
+  executor: PgBoss,
   perform: {
-    fn: import { processScheduledCalls } from "@src/golden-voices/jobs/processScheduledCalls"
-  }
+    fn: import { processScheduledCalls } from "@src/golden-voices/jobs/processScheduledCalls",
+  },
   schedule: {
     cron: "*/5 * * * *"
-  }
+  },
   entities: [User, Senior, ScheduledCall, Call, UserSubscription, CreditTransaction]
 }
 
 job generateCallSummary {
-  executor: PgBoss
+  executor: PgBoss,
   perform: {
-    fn: import { generateCallSummary } from "@src/golden-voices/jobs/generateCallSummary"
-  }
+    fn: import { generateCallSummary } from "@src/golden-voices/jobs/generateCallSummary",
+  },
   entities: [Call, CallSummary, CallInsight]
 }
 //#endregion
