@@ -1,6 +1,6 @@
 # Golden Voices Connect — Setup Status
 
-**Last audited:** 2026-05-02 (updated 2026-05-02 evening)
+**Last audited:** 2026-05-02 (full audit) / 2026-05-03 (Wasp CLI scan check)
 **Env vars status:** PARTIAL — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all set in `.env.server`. VAPI keys still missing.
 **Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
