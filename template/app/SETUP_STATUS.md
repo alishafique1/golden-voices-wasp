@@ -1,8 +1,8 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-03 17:28 UTC
+**Last updated:** 2026-05-03 19:49 UTC
 **Env vars status:** 5/6 GROUPS SET — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, ADMIN_EMAILS confirmed in `.env.server`. **VAPI keys still missing.**
-**Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe / GPT-4o
+**Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe / GPT-4o-mini
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes` — push with `git push origin hermes`
 **SSH key:** `id_ed25519_goldenvoices` — verified working
@@ -14,36 +14,34 @@
 
 | Component | Status | Notes |
 |---|---|---|
-| Wasp project scaffold | ✅ | `main.wasp`, `package.json`, `tsconfig.json` all present |
+| Wasp project scaffold | ✅ | `main.wasp`, `package.json`, `tsconfig.json` all present, syntax clean (all commas in place) |
 | Prisma schema | ✅ | 13 models: User, Senior, Call, CallSummary, CallInsight, ScheduledCall, UserSubscription, CreditTransaction, GptResponse, Task, File, DailyStats, ContactFormMessage |
 | VAPI webhook handler | ✅ | `src/golden-voices/vapiWebhook.ts` — handles call-start, call-end, status-update, conversation-update |
 | VAPI client (outbound) | ✅ | `src/golden-voices/vapiClient.ts` — initiateOutboundCall, getCall, endCall |
-| AI call summary job | ✅ | `src/golden-voices/jobs/generateCallSummary.ts` — GPT-4o-mini → CallSummary + CallInsight records |
+| AI call summary job | ✅ | `src/golden-voices/lib/aiSummary.ts` — GPT-4o-mini → CallSummary + CallInsight records |
 | Scheduled call processor | ✅ | `src/golden-voices/jobs/processScheduledCalls.ts` — PgBoss job, finds due calls, debits credits, initiates VAPI outbound |
-| Resend email (call completed) | ✅ | `src/golden-voices/lib/emailNotifications.ts` — branded HTML email with CTA link |
-| Operations (CRUD) | ✅ | `src/golden-voices/operations.ts` — createSenior, scheduleCall, getCalls, etc. |
-| Stripe billing pages | ✅ | `src/golden-voices/BillingPage.tsx` |
+| Resend email (call completed) | ✅ | `src/golden-voices/lib/emailNotifications.ts` — branded HTML email with CTA link to call detail |
+| Operations (CRUD) | ✅ | `src/golden-voices/operations.ts` — createSenior, scheduleCall, getCalls, getDashboardStats, getCredits, etc. |
+| Stripe billing pages | ✅ | `src/golden-voices/BillingPage.tsx` — upgrade/downgrade subscription |
 | Dashboard pages | ✅ | 10 React pages: Dashboard, CallDetail, Calls, NewSenior, EditSenior, Schedule, Billing, SeniorsList |
-| PgBoss job executor | ✅ | Configured in `main.wasp` for `generateCallSummary` + `processScheduledCalls` |
+| PgBoss job executor | ✅ | Configured in `main.wasp` for `generateCallSummary` + `processScheduledCalls` (every 5 min) |
 | envValidationSchema wired | ✅ | `src/env.ts` merges `gvEnvValidationSchema` — all GV env vars validated at startup |
-| `main.wasp` syntax | ✅ | All commas present — no compile errors from syntax |
-| Email from-address | ✅ | `no-reply@goldenvoices.app` — matches Wasp auth from-address |
-| `.env.server.example` | ✅ | Complete, all 30+ vars documented with comments |
+| `main.wasp` syntax | ✅ | All commas present — no compile errors |
+| Email from-address | ✅ | `Golden Voices <no-reply@goldenvoices.app>` — matches Wasp auth from-address |
+| `.env.server.example` | ✅ | Complete, all 30+ vars documented with comments (committed `45223e5`) |
 | `.env.server` (actual) | ✅ | DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all present |
 
 ---
 
-## What's Blocked on Env Vars
-
-`.env.server` confirmed with these vars:
+## Env Var Status — `.env.server` Confirmed Contents
 
 ```
+ADMIN_EMAILS=ali@socialdots.ca
 DATABASE_URL=postgresql://golden_app:***@host.docker.internal:54320/shared_apps?schema=golden_voices
 OPENAI_API_KEY=***
 RESEND_API_KEY=***
 STRIPE_SECRET_KEY=***
 STRIPE_WEBHOOK_SECRET=***
-ADMIN_EMAILS=ali@socialdots.ca
 ```
 
 | Env Var | `.env.server` | Blocked By | Impact |
@@ -65,14 +63,14 @@ ADMIN_EMAILS=ali@socialdots.ca
 2. `VAPI_ASSISTANT_ID` → create an outbound assistant in Vapi dashboard
 3. `VAPI_PHONE_NUMBER_ID` → a Vapi-provisioned outbound phone number
 
-### Wasp CLI — Ali must run one command
-The VPS Wasp CLI is **0.21.1** but the project requires **^0.23.0**. **Ali must run this manually** (tirith blocks automated `npm install -g`):
+### Wasp CLI — Ali must run one command (tirith blocks automated)
+The VPS Wasp CLI is **0.21.1** but the project requires **^0.23.0**. Ali must run in an interactive shell:
 
 ```bash
 npm install -g @wasp.sh/wasp-cli@^0.23.0
 ```
 
-After that, on the VPS:
+Then on the VPS, after VAPI vars arrive:
 ```bash
 cd /root/Golden-Voices-Wasp/template/app
 wasp db migrate-dev
@@ -97,8 +95,8 @@ User
 ```
 
 ### Schema verdict: Complete. No new models needed for the VAPI calling flow.
-
-Minor gap: `ContactFormMessage` has no relation field on `User` (orphan). Non-critical — contact-us feature backlog.
+- Minor: `ContactFormMessage.userId` is set but no explicit `User` relation shown in schema (ormRelationship annotation missing). Non-critical — contact-us feature is backlog.
+- All foreign keys, indices, and cascade rules are correct.
 
 ---
 
@@ -109,8 +107,9 @@ Minor gap: `ContactFormMessage` has no relation field on `User` (orphan). Non-cr
 - Called from `vapiWebhook.ts` → `handleCallEnd()` after each `completed` call
 - From: `"Golden Voices <no-reply@goldenvoices.app>"`
 - Uses `env.CLIENT_URL ?? "http://localhost:3000"` for CTA link
+- **No corruption** — `RESEND_API_KEY` is read correctly from `env` (the `***` dots in grep output were regex matching artifacts, not file content)
 
-### Hardcoded strings
+### Hardcoded strings (acceptable risk)
 | Location | Value | Risk |
 |---|---|---|
 | `FROM_EMAIL` constant | `"Golden Voices <no-reply@goldenvoices.app>"` | Low — make env-driven when domain is verified |
@@ -128,7 +127,6 @@ Minor gap: `ContactFormMessage` has no relation field on `User` (orphan). Non-cr
 ### Action items for Ali
 1. Verify `goldenvoices.app` domain in Resend dashboard
 2. Add `RESEND_DOMAIN_ID` to env and make `FROM_EMAIL` env-driven once verified
-3. Consider: welcome email, credit-low warning, subscription expiry
 
 ---
 
@@ -148,15 +146,8 @@ VAPI_PHONE_NUMBER_ID       ❌ → BLOCKING: outbound calls
 ```
 
 ### After Ali provides VAPI keys + runs Wasp CLI upgrade:
-```bash
-# 1. Ali runs in interactive shell (tirith blocks automated):
-npm install -g @wasp.sh/wasp-cli@^0.23.0
-
-# 2. Then Hermes can run:
-cd /root/Golden-Voices-Wasp/template/app
-wasp db migrate-dev
-wasp start
-```
+1. Ali runs: `npm install -g @wasp.sh/wasp-cli@^0.23.0` (interactive shell — tirith blocks automated)
+2. Then Hermes can run: `cd /root/Golden-Voices-Wasp/template/app && wasp db migrate-dev && wasp start`
 
 ### Still needs code work (not env-blocked)
 - [ ] Clerk auth — wire into `main.wasp` auth block (currently using Wasp built-in email/password)
@@ -165,7 +156,7 @@ wasp start
 - [ ] Landing page redesign (GH issue backlog)
 - [ ] Vercel deploy (GH issue backlog)
 - [ ] End-to-end test flow (GH issue backlog)
-- [ ] ContactFormMessage relation on User model (GH issue backlog)
+- [ ] ContactFormMessage relation fix on User model (GH issue backlog)
 
 ---
 
@@ -183,9 +174,11 @@ git push origin hermes
 
 Current branch: `hermes`
 
+**NOTE:** `main` branch is ahead by 1 commit (landing page redesign + Stripe billing wiring) — `c1eb711`. `hermes` is behind `main`. This is normal — `hermes` is the deployment/stability branch.
+
 ---
 
 ## Last Commit
 ```
-<this session> SETUP_STATUS.md refreshed — 2026-05-03 15:23 UTC — VAPI keys still missing, Wasp CLI 0.21.1 vs required 0.23.0 confirmed
+92069c3 Golden Voices: SETUP_STATUS refreshed — 2026-05-03 17:28 UTC — VAPI still missing, Wasp CLI 0.21.1 vs 0.23 confirmed
 ```
