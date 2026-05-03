@@ -1,12 +1,12 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-03 11:17 UTC
+**Last updated:** 2026-05-03 15:23 UTC
 **Env vars status:** 5/6 GROUPS SET — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, ADMIN_EMAILS confirmed in `.env.server`. **VAPI keys still missing.**
 **Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe / GPT-4o
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes` — push with `git push origin hermes`
 **SSH key:** `id_ed25519_goldenvoices` — verified working
-**Wasp requirement:** `^0.23.0` — VPS has **no version cached** (`wasp --version` returns CLI help only). Ali must run `npm install -g @wasp.sh/wasp-cli@^0.23.0`
+**Wasp version:** `0.21.1` (VPS) vs required `^0.23.0` (main.wasp) — **CLI upgrade blocked by tirith — Ali must run manually**
 
 ---
 
@@ -15,9 +15,9 @@
 | Component | Status | Notes |
 |---|---|---|
 | Wasp project scaffold | ✅ | `main.wasp`, `package.json`, `tsconfig.json` all present |
-| Prisma schema | ✅ | 8 models: User, Senior, Call, CallSummary, CallInsight, ScheduledCall, UserSubscription, CreditTransaction |
-| VAPI webhook handler | ✅ | `src/golden-voices/vapiWebhook.ts` — handles `call-start`, `call-end`, `status-update`, `conversation-update` |
-| VAPI client (outbound) | ✅ | `src/golden-voices/vapiClient.ts` — `initiateOutboundCall`, `getCall`, `endCall` |
+| Prisma schema | ✅ | 13 models: User, Senior, Call, CallSummary, CallInsight, ScheduledCall, UserSubscription, CreditTransaction, GptResponse, Task, File, DailyStats, ContactFormMessage |
+| VAPI webhook handler | ✅ | `src/golden-voices/vapiWebhook.ts` — handles call-start, call-end, status-update, conversation-update |
+| VAPI client (outbound) | ✅ | `src/golden-voices/vapiClient.ts` — initiateOutboundCall, getCall, endCall |
 | AI call summary job | ✅ | `src/golden-voices/jobs/generateCallSummary.ts` — GPT-4o-mini → CallSummary + CallInsight records |
 | Scheduled call processor | ✅ | `src/golden-voices/jobs/processScheduledCalls.ts` — PgBoss job, finds due calls, debits credits, initiates VAPI outbound |
 | Resend email (call completed) | ✅ | `src/golden-voices/lib/emailNotifications.ts` — branded HTML email with CTA link |
@@ -53,12 +53,12 @@ ADMIN_EMAILS=ali@socialdots.ca
 | `RESEND_API_KEY` | ✅ Set | — | Email notifications ready |
 | `STRIPE_SECRET_KEY` | ✅ Set | — | Payment processing ready |
 | `STRIPE_WEBHOOK_SECRET` | ✅ Set | — | Webhook verification ready |
-| `ADMIN_EMAILS` | ✅ Set | — | Admin access: `ali@socialdots.ca` |
+| `ADMIN_EMAILS` | ✅ Set | — | Admin access: ali@socialdots.ca |
 | `VAPI_PRIVATE_KEY` | ❌ Missing | Ali | Cannot initiate outbound calls |
 | `VAPI_ASSISTANT_ID` | ❌ Missing | Ali | Cannot initiate outbound calls |
 | `VAPI_PHONE_NUMBER_ID` | ❌ Missing | Ali | Cannot initiate outbound calls |
-| `CLERK_PUBLISHABLE_KEY` | ❌ N/A | — | Clerk not wired in main.wasp (uses Wasp built-in email/password) |
-| `CLERK_SECRET_KEY` | ❌ N/A | — | Clerk not wired in main.wasp |
+| `CLERK_PUBLISHABLE_KEY` | N/A | — | Clerk not wired in main.wasp (uses Wasp built-in email/password) |
+| `CLERK_SECRET_KEY` | N/A | — | Clerk not wired in main.wasp |
 
 ### VAPI keys needed from Ali:
 1. `VAPI_PRIVATE_KEY` → https://dashboard.vapi.ai → API Keys
@@ -66,7 +66,7 @@ ADMIN_EMAILS=ali@socialdots.ca
 3. `VAPI_PHONE_NUMBER_ID` → a Vapi-provisioned outbound phone number
 
 ### Wasp CLI — Ali must run one command
-The VPS Wasp CLI needs to be upgraded to `^0.23.0`. **Ali must run this manually** (tirith blocks automated `npm install -g`):
+The VPS Wasp CLI is **0.21.1** but the project requires **^0.23.0**. **Ali must run this manually** (tirith blocks automated `npm install -g`):
 
 ```bash
 npm install -g @wasp.sh/wasp-cli@^0.23.0
@@ -83,8 +83,8 @@ wasp start
 
 ## Prisma Schema Audit — Complete
 
-### Models present (8)
-`User`, `Senior`, `Call`, `CallSummary`, `CallInsight`, `ScheduledCall`, `UserSubscription`, `CreditTransaction`
+### Models present (13)
+`User`, `Senior`, `Call`, `CallSummary`, `CallInsight`, `ScheduledCall`, `UserSubscription`, `CreditTransaction`, `GptResponse`, `Task`, `File`, `DailyStats`, `ContactFormMessage`
 
 ### VAPI calling flow — data model trace
 ```
@@ -96,9 +96,9 @@ User
                     └── CallInsight[] (type, content, severity)
 ```
 
-### Schema verdict: Complete. No new models needed.
+### Schema verdict: Complete. No new models needed for the VAPI calling flow.
 
-The only minor gap: `ContactFormMessage` exists in schema but has no relation field on `User`. This is a non-critical contact-us feature (GH issue backlog) — not part of the core calling loop.
+Minor gap: `ContactFormMessage` has no relation field on `User` (orphan). Non-critical — contact-us feature backlog.
 
 ---
 
@@ -108,13 +108,14 @@ The only minor gap: `ContactFormMessage` exists in schema but has no relation fi
 - `sendCallCompletedEmail()` in `src/golden-voices/lib/emailNotifications.ts`
 - Called from `vapiWebhook.ts` → `handleCallEnd()` after each `completed` call
 - From: `"Golden Voices <no-reply@goldenvoices.app>"`
+- Uses `env.CLIENT_URL ?? "http://localhost:3000"` for CTA link
 
 ### Hardcoded strings
 | Location | Value | Risk |
 |---|---|---|
 | `FROM_EMAIL` constant | `"Golden Voices <no-reply@goldenvoices.app>"` | Low — make env-driven when domain is verified |
 | `CLIENT_URL` fallback | `"http://localhost:3000"` | Low — already has `env.CLIENT_URL` override |
-| Email subject | `"Your call with ${seniorName} is complete"` | Low — static template |
+| Email subject | Static template with senior name | Low — static template |
 | CSS theme colors | `#1A1A2E`, `#D4AF37`, `#F59E0B`, `#FDF8F3` | None — branding constants |
 
 ### Missing
@@ -140,7 +141,7 @@ DATABASE_URL               ✅ → DB connection + migrations ready
 OPENAI_API_KEY             ✅ → AI summaries ready
 RESEND_API_KEY             ✅ → Email notifications ready
 STRIPE_SECRET_KEY          ✅ → Payment processing ready
-STRIPE_WEBHOOK_SECRET      ✅ → Webhook verification ready
+STRIPE_WEBHOOK_SECRET     ✅ → Webhook verification ready
 VAPI_PRIVATE_KEY           ❌ → BLOCKING: outbound calls
 VAPI_ASSISTANT_ID          ❌ → BLOCKING: outbound calls
 VAPI_PHONE_NUMBER_ID       ❌ → BLOCKING: outbound calls
@@ -186,5 +187,5 @@ Current branch: `hermes`
 
 ## Last Commit
 ```
-<this session> Golden Voices: SETUP_STATUS.md refreshed — 2026-05-03 11:17 UTC, VAPI still missing, Wasp CLI upgrade needed
+<this session> SETUP_STATUS.md refreshed — 2026-05-03 15:23 UTC — VAPI keys still missing, Wasp CLI 0.21.1 vs required 0.23.0 confirmed
 ```
