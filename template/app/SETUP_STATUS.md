@@ -1,6 +1,6 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-04 10:30 UTC
+**Last updated:** 2026-05-04 12:43 UTC
 **Wasp CLI:** 0.21.1 (project requires `^0.23.0` — Ali must run upgrade manually)
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes`
@@ -23,8 +23,8 @@
 | CRUD operations | ✅ | `golden-voices/operations.ts` |
 | Dashboard pages | ✅ | Dashboard, CallDetail, Calls, NewSenior, EditSenior, Schedule, Billing |
 | envValidationSchema | ✅ | `src/env.ts` merges `gvEnvValidationSchema` |
-| `.env.server` | ✅ | DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS |
-| `.env.server.example` | ✅ | Complete reference — updated 2026-05-04 |
+| `.env.server` | ✅ | 6 vars set (DB, OpenAI, Resend, Stripe webhook, Admin emails) |
+| `.env.server.example` | ✅ | Complete reference — all 12 variables documented |
 
 ---
 
@@ -34,15 +34,23 @@
 
 | Env Var | Value | Status |
 |---|---|---|
-| `DATABASE_URL` | ✅ Set | DB connection ready |
+| `DATABASE_URL` | ✅ Set | DB connection ready (Neon, shared_apps schema) |
 | `OPENAI_API_KEY` | ✅ Set | AI summaries ready |
 | `RESEND_API_KEY` | ✅ Set | Email notifications ready |
-| `STRIPE_SECRET_KEY` | ✅ Set | Payment processing ready |
+| `STRIPE_API_KEY` | ✅ Set | Payment processing ready |
 | `STRIPE_WEBHOOK_SECRET` | ✅ Set | Webhook verification ready |
 | `ADMIN_EMAILS` | ✅ Set | ali@socialdots.ca |
-| `VAPI_PRIVATE_KEY` | ❌ Missing | BLOCKING — outbound calls |
-| `VAPI_ASSISTANT_ID` | ❌ Missing | BLOCKING — outbound calls |
-| `VAPI_PHONE_NUMBER_ID` | ❌ Missing | BLOCKING — outbound calls |
+
+### Missing from `.env.server` (blocking or incomplete)
+
+| Env Var | Status | Blocker Level |
+|---|---|---|
+| `CLIENT_URL` | ❌ Missing | HIGH — email CTAs use `http://localhost:3000` fallback |
+| `CLERK_PUBLISHABLE_KEY` | ❌ Missing | LOW — Clerk not wired (email/password in use) |
+| `CLERK_SECRET_KEY` | ❌ Missing | LOW — Clerk not wired |
+| `VAPI_PRIVATE_KEY` | ❌ Missing | CRITICAL — outbound calls blocked |
+| `VAPI_ASSISTANT_ID` | ❌ Missing | CRITICAL — outbound calls blocked |
+| `VAPI_PHONE_NUMBER_ID` | ❌ Missing | CRITICAL — outbound calls blocked |
 
 ### Missing: VAPI Keys (needed from Ali)
 
@@ -86,6 +94,7 @@ User
 Non-blocking notes:
 - `ContactFormMessage.userId` lacks explicit `@relation` attribute (contact-us is backlog)
 - All foreign keys, indices, and cascade rules are correct
+- No `isActive` flag on `User` — deactivating users not supported (acceptable for MVP)
 
 ---
 
@@ -94,12 +103,35 @@ Non-blocking notes:
 - `sendCallCompletedEmail()` wired to `vapiWebhook.ts → handleCallEnd()`
 - From: `"Golden Voices <no-reply@goldenvoices.app>"`
 - Uses `env.CLIENT_URL ?? "http://localhost:3000"` for CTA link
+- HTML template is fully hardcoded inline in `emailNotifications.ts` — no external template files
 - No retry/DLQ on failure (acceptable for MVP)
+- `goldenvoices.app` domain **not yet verified in Resend** — emails may land in spam
 
-Backlog items:
-- No welcome email for new users
-- No credit-low alert (credits < 2)
-- `goldenvoices.app` domain not verified in Resend
+**Hardcoded strings in email template (all correct, no action needed):**
+- Logo text: `"Golden Voices"`
+- Tagline: `"Daily connection for the people who matter most"`
+- CTA button: `"View Summary"`
+
+**Backlog items:**
+- No welcome email for new user signups
+- No credit-low alert (credits < 2 triggers)
+- No onboarding sequence email
+- No delivery failure handling / retry
+
+---
+
+## Env Var Cross-Check — PASS
+
+| Code location | Var name used | Zod schema | `.env.server.example` | Match |
+|---|---|---|---|---|
+| `emailNotifications.ts` | `RESEND_API_KEY` | `RESEND_API_KEY` | `RESEND_API_KEY` | ✅ |
+| `stripe/env.ts` | `STRIPE_API_KEY` | `STRIPE_API_KEY` | `STRIPE_API_KEY` | ✅ |
+| `stripe/env.ts` | `STRIPE_PUBLISHABLE_KEY` | `STRIPE_PUBLISHABLE_KEY` | `STRIPE_PUBLISHABLE_KEY` | ✅ |
+| `stripeWebhook` | `STRIPE_WEBHOOK_SECRET` | `STRIPE_WEBHOOK_SECRET` | `STRIPE_WEBHOOK_SECRET` | ✅ |
+| `emailNotifications.ts` | `CLIENT_URL` | `CLIENT_URL` (default) | `CLIENT_URL` | ✅ |
+| `env.ts` | `OPENAI_API_KEY` | `OPENAI_API_KEY` | `OPENAI_API_KEY` | ✅ |
+
+**No mismatches found.** The OpenSaaS golden-voices-wasp incident (wrong env var name for Stripe) is NOT present here — all names are consistent.
 
 ---
 
@@ -112,7 +144,7 @@ Backlog items:
 | Call email notifications | ✅ Ready |
 | Credit tracking | ✅ Ready |
 | Stripe checkout flow | ⚠️ Needs code (webhook-only, no checkout page wiring) |
-| Clerk auth | ⚠️ Not wired (Wasp built-in email/password in use) |
+| Clerk auth | ⚠️ Not wired (Wasp email/password in use) |
 | Vercel deploy | ⚠️ Backlog |
 
 ---
