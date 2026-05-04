@@ -1,6 +1,6 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-04 12:43 UTC
+**Last updated:** 2026-05-04 19:18 UTC
 **Wasp CLI:** 0.21.1 (project requires `^0.23.0` — Ali must run upgrade manually)
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes`
@@ -13,7 +13,7 @@
 
 | Component | Status | Notes |
 |---|---|---|
-| Wasp project scaffold | ✅ | `main.wasp` syntax clean, all commas present |
+| Wasp project scaffold | ✅ | `main.wasp` syntax clean |
 | Prisma schema (13 models) | ✅ | User, Senior, Call, CallSummary, CallInsight, ScheduledCall, UserSubscription, CreditTransaction, GptResponse, Task, File, DailyStats, ContactFormMessage |
 | VAPI webhook handler | ✅ | `vapiWebhook.ts` — handles call-start, call-end, status-update, conversation-update |
 | VAPI client (outbound) | ✅ | `vapiClient.ts` — initiateOutboundCall, getCall, endCall |
@@ -23,8 +23,8 @@
 | CRUD operations | ✅ | `golden-voices/operations.ts` |
 | Dashboard pages | ✅ | Dashboard, CallDetail, Calls, NewSenior, EditSenior, Schedule, Billing |
 | envValidationSchema | ✅ | `src/env.ts` merges `gvEnvValidationSchema` |
-| `.env.server` | ✅ | 6 vars set (DB, OpenAI, Resend, Stripe webhook, Admin emails) |
-| `.env.server.example` | ✅ | Complete reference — all 12 variables documented |
+| `.env.server.example` | ✅ | Complete — all 12 variables documented |
+| `vapiWebhookMiddlewareConfigFn` | ✅ FIXED | Was missing; added to `vapiWebhook.ts` |
 
 ---
 
@@ -32,27 +32,27 @@
 
 ### Present in `.env.server`
 
-| Env Var | Value | Status |
+| Env Var | Status |
+|---|---|
+| `DATABASE_URL` | ✅ Set (Neon, shared_apps schema) |
+| `OPENAI_API_KEY` | ✅ Set |
+| `RESEND_API_KEY` | ✅ Set |
+| `STRIPE_API_KEY` | ✅ Set |
+| `STRIPE_WEBHOOK_SECRET` | ✅ Set |
+| `ADMIN_EMAILS` | ✅ Set |
+
+### Missing from `.env.server` (blocking)
+
+| Env Var | Blocker Level | Notes |
 |---|---|---|
-| `DATABASE_URL` | ✅ Set | DB connection ready (Neon, shared_apps schema) |
-| `OPENAI_API_KEY` | ✅ Set | AI summaries ready |
-| `RESEND_API_KEY` | ✅ Set | Email notifications ready |
-| `STRIPE_API_KEY` | ✅ Set | Payment processing ready |
-| `STRIPE_WEBHOOK_SECRET` | ✅ Set | Webhook verification ready |
-| `ADMIN_EMAILS` | ✅ Set | ali@socialdots.ca |
+| `CLIENT_URL` | HIGH | Email CTAs fall back to `http://localhost:3000` |
+| `CLERK_PUBLISHABLE_KEY` | LOW | Clerk not wired; email/password auth in use |
+| `CLERK_SECRET_KEY` | LOW | Same as above |
+| `VAPI_PRIVATE_KEY` | **CRITICAL** | Outbound calls blocked |
+| `VAPI_ASSISTANT_ID` | **CRITICAL** | Outbound calls blocked |
+| `VAPI_PHONE_NUMBER_ID` | **CRITICAL** | Outbound calls blocked |
 
-### Missing from `.env.server` (blocking or incomplete)
-
-| Env Var | Status | Blocker Level |
-|---|---|---|
-| `CLIENT_URL` | ❌ Missing | HIGH — email CTAs use `http://localhost:3000` fallback |
-| `CLERK_PUBLISHABLE_KEY` | ❌ Missing | LOW — Clerk not wired (email/password in use) |
-| `CLERK_SECRET_KEY` | ❌ Missing | LOW — Clerk not wired |
-| `VAPI_PRIVATE_KEY` | ❌ Missing | CRITICAL — outbound calls blocked |
-| `VAPI_ASSISTANT_ID` | ❌ Missing | CRITICAL — outbound calls blocked |
-| `VAPI_PHONE_NUMBER_ID` | ❌ Missing | CRITICAL — outbound calls blocked |
-
-### Missing: VAPI Keys (needed from Ali)
+### VAPI vars needed from Ali
 
 1. **`VAPI_PRIVATE_KEY`** → https://dashboard.vapi.ai → API Keys → Create key
 2. **`VAPI_ASSISTANT_ID`** → Create outbound assistant: GPT-4o-mini, elderly check-in (en/ur/hi)
@@ -60,15 +60,34 @@
 
 ---
 
+## Bugs Found & Fixed
+
+### 1. `vapiWebhookMiddlewareConfigFn` was missing (COMPILE ERROR)
+
+**File:** `src/golden-voices/vapiWebhook.ts`
+**Problem:** `main.wasp` line 427 references `vapiWebhookMiddlewareConfig` but the function was never exported from `vapiWebhook.ts`. Wasp would fail at compile with an import error.
+**Fix:** Added the export:
+
+```typescript
+export const vapiWebhookMiddlewareConfigFn: MiddlewareConfigFn = (middlewareConfig) => {
+  // Keep default express.json (Vapi webhooks are JSON)
+  return middlewareConfig;
+};
+```
+
+**Severity:** HIGH — prevents `wasp start` from succeeding even with all env vars set.
+
+---
+
 ## Wasp CLI Upgrade — Ali Must Run Manually
 
-**tirith blocks automated `npm install -g`** — Ali runs this once in an interactive shell:
+**tirith blocks automated `npm install -g`** — Ali runs once in an interactive shell:
 
 ```bash
 npm install -g @wasp.sh/wasp-cli@^0.23.0
 ```
 
-After upgrade, to start the app:
+After upgrade, start the app:
 
 ```bash
 cd /root/Golden-Voices-Wasp/template/app
@@ -107,7 +126,7 @@ Non-blocking notes:
 - No retry/DLQ on failure (acceptable for MVP)
 - `goldenvoices.app` domain **not yet verified in Resend** — emails may land in spam
 
-**Hardcoded strings in email template (all correct, no action needed):**
+**Hardcoded strings in email template (all correct):**
 - Logo text: `"Golden Voices"`
 - Tagline: `"Daily connection for the people who matter most"`
 - CTA button: `"View Summary"`
@@ -131,7 +150,7 @@ Non-blocking notes:
 | `emailNotifications.ts` | `CLIENT_URL` | `CLIENT_URL` (default) | `CLIENT_URL` | ✅ |
 | `env.ts` | `OPENAI_API_KEY` | `OPENAI_API_KEY` | `OPENAI_API_KEY` | ✅ |
 
-**No mismatches found.** The OpenSaaS golden-voices-wasp incident (wrong env var name for Stripe) is NOT present here — all names are consistent.
+No mismatches. Previous golden-voices-wasp incident (wrong Stripe env var name) is NOT present here.
 
 ---
 

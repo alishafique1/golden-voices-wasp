@@ -11,8 +11,19 @@
  */
 
 import { prisma } from "wasp/server";
-import type { WebhookFn } from "wasp/server/webhooks";
+import type { WebhookFn, MiddlewareConfigFn } from "wasp/server/webhooks";
 import { sendCallCompletedEmail } from "./lib/emailNotifications";
+
+// Vapi requires raw body for webhook signature verification (if enabled)
+export const vapiWebhookMiddlewareConfigFn: MiddlewareConfigFn = (
+  middlewareConfig,
+) => {
+  // Most Vapi webhooks are JSON — keep default express.json
+  // If Vapi adds signature verification later, switch to raw here:
+  // middlewareConfig.delete("express.json");
+  // middlewareConfig.set("express.raw", express.raw({ type: "application/json" }));
+  return middlewareConfig;
+};
 
 export const vapiWebhook: WebhookFn<
   any,
