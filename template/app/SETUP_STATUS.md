@@ -1,7 +1,8 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-03 19:49 UTC
+**Last updated:** 2026-05-04 01:55 UTC
 **Env vars status:** 5/6 GROUPS SET — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, ADMIN_EMAILS confirmed in `.env.server`. **VAPI keys still missing.**
+**App start attempted:** `wasp start` confirmed failing at compile step — Wasp 0.21.1 vs required ^0.23.0.
 **Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe / GPT-4o-mini
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes` — push with `git push origin hermes`
