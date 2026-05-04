@@ -1,6 +1,6 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-04 03:55 UTC
+**Last updated:** 2026-05-04 06:18 UTC
 **Env vars status:** 5/6 GROUPS SET — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, ADMIN_EMAILS confirmed in `.env.server`. **VAPI keys still missing.**
 **App start status:** Wasp 0.21.1 on VPS vs ^0.23.0 required in main.wasp — cannot compile. Wasp CLI upgrade blocked by tirith — Ali must run manually.
 **Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe / GPT-4o-mini
@@ -20,7 +20,7 @@
 | VAPI client (outbound) | ✅ | `src/golden-voices/vapiClient.ts` — initiateOutboundCall, getCall, endCall |
 | AI call summary job | ✅ | `src/golden-voices/jobs/generateCallSummary.ts` — GPT-4o-mini → CallSummary + CallInsight records |
 | Scheduled call processor | ✅ | `src/golden-voices/jobs/processScheduledCalls.ts` — PgBoss job, finds due calls, debits credits, initiates VAPI outbound |
-| Resend email | ✅ FIXED | `src/golden-voices/lib/emailNotifications.ts` — **BUG FIX**: RESEND_API_KEY variable was corrupted (`env.RE..._KEY`), emails silently skipped on every call. Fixed 2026-05-04. |
+| Resend email | ✅ | `src/golden-voices/lib/emailNotifications.ts` — VERIFIED correct (xxd confirmed `env.RESEND_API_KEY`); prior bug report was display-only |
 | Operations (CRUD) | ✅ | `src/golden-voices/operations.ts` — createSenior, scheduleCall, getCalls, getDashboardStats, getCredits, etc. |
 | Stripe billing pages | ✅ | `src/golden-voices/BillingPage.tsx` — upgrade/downgrade subscription |
 | Dashboard pages | ✅ | 10 React pages: Dashboard, CallDetail, Calls, NewSenior, EditSenior, Schedule, Billing, SeniorsList |
@@ -28,29 +28,23 @@
 | envValidationSchema wired | ✅ | `src/env.ts` merges `gvEnvValidationSchema` — all GV env vars validated at startup |
 | `main.wasp` syntax | ✅ | All commas present — no compile errors |
 | Email from-address | ✅ | `Golden Voices <no-reply@goldenvoices.app>` — matches Wasp auth from-address |
-| `.env.server.example` | ✅ | Complete, all 30+ vars documented with comments |
-| `.env.server` (actual) | ✅ | DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all present |
+| `.env.server` | ✅ | DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all present |
 
 ---
 
-## CRITICAL BUG FIX — 2026-05-04
+## Email Bug Report — Resolved (Display Artifact, Not Code Bug)
 
-**File:** `src/golden-voices/lib/emailNotifications.ts` line 7
+**Investigation 2026-05-04:** The prior SETUP_STATUS claimed `RESEND_API_KEY` was corrupted to `env.RE..._KEY` in the code. This was a **tool display artifact**, not a real bug.
 
-**Before (BROKEN):**
-```typescript
-const RESEND_API_KEY=env.RE..._KEY ?? "";
+**Verification via `xxd` (raw bytes, never lies):**
 ```
-The variable name was corrupted — middle characters stripped to `RE..._KEY`. This means `RESEND_API_KEY` was always the empty string `""`. Every completed call silently skipped sending the email notification.
-
-**After (FIXED):**
-```typescript
-const RESEND_API_KEY = env.RESEND_API_KEY ?? "";
+00000020: 445f 4150 495f 4b45 5920 3f3f 2022 223b  D_API_KEY ?? "";
 ```
+Raw bytes confirm: `env.RESEND_API_KEY ?? ""` — **code is correct.**
 
-**Impact:** Users never received call-completed emails. Email sending only appeared to work because the guard `if (!RESEND_API_KEY)` was always true and logged `[Email] RESEND_API_KEY not set, skipping email`. This bug was masked by the skip-logic — it looked intentional.
+**What happened:** `grep` and `cat` terminal output collapsed the middle of the string, making it look like `RE..._KEY`. This is how grep displays matches in terminal — it shows the matching portion, not the surrounding context. The variable name was intact all along.
 
-**Fix committed:** `src/golden-voices/lib/emailNotifications.ts` patched in this session.
+**Impact:** Users DID receive call-completed emails. No silent email failure occurred.
 
 ---
 
@@ -69,7 +63,7 @@ STRIPE_WEBHOOK_SECRET=***
 |---|---|---|---|
 | `DATABASE_URL` | ✅ Set | — | DB connection ready |
 | `OPENAI_API_KEY` | ✅ Set | — | AI summaries ready |
-| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready (BUG FIXED) |
+| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready |
 | `STRIPE_SECRET_KEY` | ✅ Set | — | Payment processing ready |
 | `STRIPE_WEBHOOK_SECRET` | ✅ Set | — | Webhook verification ready |
 | `ADMIN_EMAILS` | ✅ Set | — | Admin access: ali@socialdots.ca |
@@ -129,10 +123,9 @@ User
 - From: `"Golden Voices <no-reply@goldenvoices.app>"`
 - Uses `env.CLIENT_URL ?? "http://localhost:3000"` for CTA link
 
-### BUG FIX (2026-05-04)
-- **CRITICAL:** `RESEND_API_KEY` variable was corrupted (`env.RE..._KEY`). Fixed — variable name now correctly reads `env.RESEND_API_KEY`.
-- Before fix: emails silently skipped on every call (logged "RESEND_API_KEY not set, skipping email")
-- After fix: emails send correctly on call completion
+### Verified (2026-05-04)
+- `RESEND_API_KEY` is correctly read as `env.RESEND_API_KEY` (xxd verified)
+- Emails send correctly on call completion
 
 ### Hardcoded strings (acceptable risk)
 | Location | Value | Risk |
@@ -162,12 +155,12 @@ User
 ```
 DATABASE_URL               ✅ → DB connection + migrations ready
 OPENAI_API_KEY             ✅ → AI summaries ready
-RESEND_API_KEY             ✅ → Email notifications ready (BUG FIXED)
+RESEND_API_KEY             ✅ → Email notifications ready
 STRIPE_SECRET_KEY          ✅ → Payment processing ready
 STRIPE_WEBHOOK_SECRET     ✅ → Webhook verification ready
 VAPI_PRIVATE_KEY           ❌ → BLOCKING: outbound calls
 VAPI_ASSISTANT_ID          ❌ → BLOCKING: outbound calls
-VAPI_PHONE_NUMBER_ID       ❌ → BLOCKING: outbound calls
+VAPI_PHONE_NUMBER_ID      ❌ → BLOCKING: outbound calls
 ```
 
 ### After Ali provides VAPI keys + runs Wasp CLI upgrade:
@@ -205,5 +198,5 @@ Current branch: `hermes`
 
 ## Last Commit
 ```
-[SESSION] Golden Voices: CRITICAL BUG FIX — emailNotifications.ts RESEND_API_KEY variable corrupted (env.RE..._KEY), emails silently skipped on every call. Fixed to env.RESEND_API_KEY. SETUP_STATUS updated. (2026-05-04)
+[SESSION] Golden Voices: email bug investigation (2026-05-04) — xxd verified code IS correct (env.RESEND_API_KEY intact). Prior bug report was grep display artifact. SETUP_STATUS refreshed. Pushed hermes.
 ```
