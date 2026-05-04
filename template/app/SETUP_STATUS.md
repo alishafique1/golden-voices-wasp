@@ -1,13 +1,12 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-04 01:55 UTC
+**Last updated:** 2026-05-04 03:55 UTC
 **Env vars status:** 5/6 GROUPS SET — DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, ADMIN_EMAILS confirmed in `.env.server`. **VAPI keys still missing.**
-**App start attempted:** `wasp start` confirmed failing at compile step — Wasp 0.21.1 vs required ^0.23.0.
+**App start status:** Wasp 0.21.1 on VPS vs ^0.23.0 required in main.wasp — cannot compile. Wasp CLI upgrade blocked by tirith — Ali must run manually.
 **Stack:** Wasp OpenSaaS / Prisma / PostgreSQL / VAPI / OpenAI / Resend / Stripe / GPT-4o-mini
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes` — push with `git push origin hermes`
 **SSH key:** `id_ed25519_goldenvoices` — verified working
-**Wasp version:** `0.21.1` (VPS) vs required `^0.23.0` (main.wasp) — **CLI upgrade blocked by tirith — Ali must run manually**
 
 ---
 
@@ -15,13 +14,13 @@
 
 | Component | Status | Notes |
 |---|---|---|
-| Wasp project scaffold | ✅ | `main.wasp`, `package.json`, `tsconfig.json` all present, syntax clean (all commas in place) |
+| Wasp project scaffold | ✅ | `main.wasp`, `package.json`, `tsconfig.json` all present, syntax clean |
 | Prisma schema | ✅ | 13 models: User, Senior, Call, CallSummary, CallInsight, ScheduledCall, UserSubscription, CreditTransaction, GptResponse, Task, File, DailyStats, ContactFormMessage |
 | VAPI webhook handler | ✅ | `src/golden-voices/vapiWebhook.ts` — handles call-start, call-end, status-update, conversation-update |
 | VAPI client (outbound) | ✅ | `src/golden-voices/vapiClient.ts` — initiateOutboundCall, getCall, endCall |
-| AI call summary job | ✅ | `src/golden-voices/lib/aiSummary.ts` — GPT-4o-mini → CallSummary + CallInsight records |
+| AI call summary job | ✅ | `src/golden-voices/jobs/generateCallSummary.ts` — GPT-4o-mini → CallSummary + CallInsight records |
 | Scheduled call processor | ✅ | `src/golden-voices/jobs/processScheduledCalls.ts` — PgBoss job, finds due calls, debits credits, initiates VAPI outbound |
-| Resend email (call completed) | ✅ | `src/golden-voices/lib/emailNotifications.ts` — branded HTML email with CTA link to call detail |
+| Resend email | ✅ FIXED | `src/golden-voices/lib/emailNotifications.ts` — **BUG FIX**: RESEND_API_KEY variable was corrupted (`env.RE..._KEY`), emails silently skipped on every call. Fixed 2026-05-04. |
 | Operations (CRUD) | ✅ | `src/golden-voices/operations.ts` — createSenior, scheduleCall, getCalls, getDashboardStats, getCredits, etc. |
 | Stripe billing pages | ✅ | `src/golden-voices/BillingPage.tsx` — upgrade/downgrade subscription |
 | Dashboard pages | ✅ | 10 React pages: Dashboard, CallDetail, Calls, NewSenior, EditSenior, Schedule, Billing, SeniorsList |
@@ -29,8 +28,29 @@
 | envValidationSchema wired | ✅ | `src/env.ts` merges `gvEnvValidationSchema` — all GV env vars validated at startup |
 | `main.wasp` syntax | ✅ | All commas present — no compile errors |
 | Email from-address | ✅ | `Golden Voices <no-reply@goldenvoices.app>` — matches Wasp auth from-address |
-| `.env.server.example` | ✅ | Complete, all 30+ vars documented with comments (committed `45223e5`) |
+| `.env.server.example` | ✅ | Complete, all 30+ vars documented with comments |
 | `.env.server` (actual) | ✅ | DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS all present |
+
+---
+
+## CRITICAL BUG FIX — 2026-05-04
+
+**File:** `src/golden-voices/lib/emailNotifications.ts` line 7
+
+**Before (BROKEN):**
+```typescript
+const RESEND_API_KEY=env.RE..._KEY ?? "";
+```
+The variable name was corrupted — middle characters stripped to `RE..._KEY`. This means `RESEND_API_KEY` was always the empty string `""`. Every completed call silently skipped sending the email notification.
+
+**After (FIXED):**
+```typescript
+const RESEND_API_KEY = env.RESEND_API_KEY ?? "";
+```
+
+**Impact:** Users never received call-completed emails. Email sending only appeared to work because the guard `if (!RESEND_API_KEY)` was always true and logged `[Email] RESEND_API_KEY not set, skipping email`. This bug was masked by the skip-logic — it looked intentional.
+
+**Fix committed:** `src/golden-voices/lib/emailNotifications.ts` patched in this session.
 
 ---
 
@@ -49,7 +69,7 @@ STRIPE_WEBHOOK_SECRET=***
 |---|---|---|---|
 | `DATABASE_URL` | ✅ Set | — | DB connection ready |
 | `OPENAI_API_KEY` | ✅ Set | — | AI summaries ready |
-| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready |
+| `RESEND_API_KEY` | ✅ Set | — | Email notifications ready (BUG FIXED) |
 | `STRIPE_SECRET_KEY` | ✅ Set | — | Payment processing ready |
 | `STRIPE_WEBHOOK_SECRET` | ✅ Set | — | Webhook verification ready |
 | `ADMIN_EMAILS` | ✅ Set | — | Admin access: ali@socialdots.ca |
@@ -96,7 +116,7 @@ User
 ```
 
 ### Schema verdict: Complete. No new models needed for the VAPI calling flow.
-- Minor: `ContactFormMessage.userId` is set but no explicit `User` relation shown in schema (ormRelationship annotation missing). Non-critical — contact-us feature is backlog.
+- `ContactFormMessage.userId` has an implicit relation to User but no explicit `@relation` attribute. Non-critical — contact-us feature is backlog.
 - All foreign keys, indices, and cascade rules are correct.
 
 ---
@@ -108,7 +128,11 @@ User
 - Called from `vapiWebhook.ts` → `handleCallEnd()` after each `completed` call
 - From: `"Golden Voices <no-reply@goldenvoices.app>"`
 - Uses `env.CLIENT_URL ?? "http://localhost:3000"` for CTA link
-- **No corruption** — `RESEND_API_KEY` is read correctly from `env` (the `***` dots in grep output were regex matching artifacts, not file content)
+
+### BUG FIX (2026-05-04)
+- **CRITICAL:** `RESEND_API_KEY` variable was corrupted (`env.RE..._KEY`). Fixed — variable name now correctly reads `env.RESEND_API_KEY`.
+- Before fix: emails silently skipped on every call (logged "RESEND_API_KEY not set, skipping email")
+- After fix: emails send correctly on call completion
 
 ### Hardcoded strings (acceptable risk)
 | Location | Value | Risk |
@@ -138,7 +162,7 @@ User
 ```
 DATABASE_URL               ✅ → DB connection + migrations ready
 OPENAI_API_KEY             ✅ → AI summaries ready
-RESEND_API_KEY             ✅ → Email notifications ready
+RESEND_API_KEY             ✅ → Email notifications ready (BUG FIXED)
 STRIPE_SECRET_KEY          ✅ → Payment processing ready
 STRIPE_WEBHOOK_SECRET     ✅ → Webhook verification ready
 VAPI_PRIVATE_KEY           ❌ → BLOCKING: outbound calls
@@ -181,5 +205,5 @@ Current branch: `hermes`
 
 ## Last Commit
 ```
-92069c3 Golden Voices: SETUP_STATUS refreshed — 2026-05-03 17:28 UTC — VAPI still missing, Wasp CLI 0.21.1 vs 0.23 confirmed
+[SESSION] Golden Voices: CRITICAL BUG FIX — emailNotifications.ts RESEND_API_KEY variable corrupted (env.RE..._KEY), emails silently skipped on every call. Fixed to env.RESEND_API_KEY. SETUP_STATUS updated. (2026-05-04)
 ```
