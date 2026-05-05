@@ -51,8 +51,22 @@
 | `VAPI_PHONE_NUMBER_ID` | **CRITICAL** | Outbound calls blocked — app refuses to start without this |
 | `CLIENT_URL` | HIGH | Email CTAs use localhost fallback; needs `https://goldenvoices.app` |
 | `STRIPE_PUBLISHABLE_KEY` | LOW | Stripe checkout needs this (webhook-only works without) |
-| `CLERK_PUBLISHABLE_KEY` | LOW | Clerk not wired; Wasp email/password in use |
-| `CLERK_SECRET_KEY` | LOW | Same as above |
+
+### Missing from `.env.server.example` (2026-05-05 audit) — Will block when those features are wired
+
+| Env Var | Blocker Level | Notes |
+|---|---|---|
+| `PAYMENTS_HOBBY_SUBSCRIPTION_PLAN_ID` | HIGH | Required by `stripeEnvSchema` — Stripe checkout needs this |
+| `PAYMENTS_PRO_SUBSCRIPTION_PLAN_ID` | HIGH | Required by `stripeEnvSchema` |
+| `PAYMENTS_CREDITS_10_PLAN_ID` | HIGH | Required by `stripeEnvSchema` |
+| `AWS_S3_REGION` | HIGH | Required by `fileUploadEnvSchema` — file uploads blocked |
+| `AWS_S3_IAM_ACCESS_KEY` | HIGH | Required by `fileUploadEnvSchema` |
+| `AWS_S3_IAM_SECRET_KEY` | HIGH | Required by `fileUploadEnvSchema` |
+| `AWS_S3_FILES_BUCKET` | HIGH | Required by `fileUploadEnvSchema` |
+| `PLAUSIBLE_API_KEY` | LOW | Optional analytics — commented out in `.env.server.example` |
+| `PLAUSIBLE_SITE_ID` | LOW | Optional analytics |
+| `PLAUSIBLE_BASE_URL` | LOW | Optional analytics |
+| `GOOGLE_ANALYTICS_*` | LOW | Optional analytics — commented out in `.env.server.example` |
 
 ### .env.server vs .env.server.example Diff
 
