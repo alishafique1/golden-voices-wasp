@@ -6,11 +6,11 @@ import * as z from "zod";
  */
 
 export const gvEnvValidationSchema = z.object({
-  VAPI_PRIVATE_KEY: z.string().optional(),
-  VAPI_ASSISTANT_ID: z.string().optional(),
-  VAPI_PHONE_NUMBER_ID: z.string().optional(),
-  OPENAI_API_KEY: z.string().optional(),
-  RESEND_API_KEY: z.string().optional(),
+  VAPI_PRIVATE_KEY: z.string().min(1, "VAPI_PRIVATE_KEY is required for outbound calls"),
+  VAPI_ASSISTANT_ID: z.string().min(1, "VAPI_ASSISTANT_ID is required for outbound calls"),
+  VAPI_PHONE_NUMBER_ID: z.string().min(1, "VAPI_PHONE_NUMBER_ID is required for outbound calls"),
+  OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required for AI summaries"),
+  RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required for email notifications"),
   STRIPE_API_KEY: z.string().optional(),
   STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
