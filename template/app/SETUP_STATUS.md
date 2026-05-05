@@ -1,6 +1,6 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-05 09:35 UTC
+**Last updated:** 2026-05-05 11:43 UTC
 **Wasp CLI:** 0.21.1 (project requires `^0.23.0` — Ali must run upgrade manually)
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes`
@@ -24,14 +24,14 @@
 | Dashboard pages | ✅ | Dashboard, CallDetail, Calls, NewSenior, EditSenior, Schedule, Billing |
 | envValidationSchema | ✅ | `src/env.ts` merges `gvEnvValidationSchema` |
 | `.env.server.example` | ✅ | Complete — all 14 variables documented |
-| `vapiWebhookMiddlewareConfigFn` | ✅ FIXED | Was missing; added to `vapiWebhook.ts` |
-| Zod schema — VAPI/AI/Resend vars | ✅ FIXED | Changed from `.optional()` to `.min(1)` required — blocks start without real keys |
+| `vapiWebhookMiddlewareConfigFn` | ✅ | Exported and correct |
+| Zod schema — VAPI/AI/Resend vars | ✅ | `.min(1)` required — blocks start without real keys |
 
 ---
 
 ## Env Var Status
 
-### Present in `.env.server` (2026-05-05)
+### Present in `.env.server` (2026-05-05 11:43 UTC)
 
 | Env Var | Status |
 |---|---|
@@ -41,46 +41,28 @@
 | `STRIPE_API_KEY` | ✅ Set |
 | `STRIPE_WEBHOOK_SECRET` | ✅ Set |
 | `ADMIN_EMAILS` | ✅ Set |
-| `CLIENT_URL` | ⚠️ Missing (hardcoded fallback `http://localhost:3000` in email CTAs) |
 
 ### Missing from `.env.server` — BLOCKING LAUNCH
 
 | Env Var | Blocker Level | Notes |
 |---|---|---|
-| `CLIENT_URL` | HIGH | Email CTAs use localhost fallback; needs `https://goldenvoices.app` |
-| `CLERK_PUBLISHABLE_KEY` | LOW | Clerk not wired; Wasp email/password in use |
-| `CLERK_SECRET_KEY` | LOW | Same as above |
 | `VAPI_PRIVATE_KEY` | **CRITICAL** | Outbound calls blocked — app refuses to start without this |
 | `VAPI_ASSISTANT_ID` | **CRITICAL** | Outbound calls blocked — app refuses to start without this |
 | `VAPI_PHONE_NUMBER_ID` | **CRITICAL** | Outbound calls blocked — app refuses to start without this |
+| `CLIENT_URL` | HIGH | Email CTAs use localhost fallback; needs `https://goldenvoices.app` |
+| `STRIPE_PUBLISHABLE_KEY` | LOW | Stripe checkout needs this (webhook-only works without) |
+| `CLERK_PUBLISHABLE_KEY` | LOW | Clerk not wired; Wasp email/password in use |
+| `CLERK_SECRET_KEY` | LOW | Same as above |
 
-> **Note on VAPI/Stripe optional:** The Zod schema previously marked VAPI, OpenAI, and Resend as `.optional()`. That meant the app would start without them and fail silently at runtime. Changed to `.min(1)` required — Wasp will now **block server startup** until real keys are present. This prevents a class of silent runtime failures.
+### .env.server vs .env.server.example Diff
 
----
+```
+.env.server has:        DATABASE_URL, OPENAI_API_KEY, RESEND_API_KEY,
+                         STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS
+.env.server.example:    All 14 variables with <placeholder> values
+```
 
-## Bugs Found & Fixed
-
-### 1. `vapiWebhookMiddlewareConfigFn` was missing (COMPILE ERROR)
-
-**File:** `src/golden-voices/vapiWebhook.ts`
-**Problem:** `main.wasp` line 427 references `vapiWebhookMiddlewareConfig` but the function was never exported. Wasp would fail at compile.
-**Fix:** Added the export.
-
-**Severity:** HIGH — prevents `wasp start` from succeeding.
-
-### 2. VAPI/OpenAI/Resend vars were optional — silent runtime failure
-
-**File:** `src/golden-voices/env.ts`
-**Problem:** `VAPI_PRIVATE_KEY`, `VAPI_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID`, `OPENAI_API_KEY`, `RESEND_API_KEY` were all `.optional()`. App would start, then fail silently when making calls/sending email.
-**Fix:** Changed to `.min(1, "...")` — Wasp now blocks startup until real keys are set.
-**Severity:** HIGH — a production deployment with empty env vars would fail silently.
-
-### 3. `CLIENT_URL` hardcoded in `.env.server.example`
-
-**File:** `.env.server.example`
-**Problem:** `CLIENT_URL=https://goldenvoices.app` was set as a literal value (not a placeholder). This would work in production but isn't correct for a template file — it implies the domain is already configured.
-**Fix:** Changed to `CLIENT_URL=<your-client-url>` with comment explaining it's used in email CTAs and Stripe redirects.
-**Severity:** LOW — only affects devs who copy `.env.server.example` literally.
+> **Note:** VAPI vars are required (`.min(1)`) — app blocks startup without them. This is intentional and correct.
 
 ---
 
@@ -167,13 +149,15 @@ No mismatches. Previous golden-voices-wasp incident (wrong Stripe env var name) 
 npm install -g @wasp.sh/wasp-cli@^0.23.0
 ```
 
-After upgrade, start the app:
+After upgrade, attempt start:
 
 ```bash
 cd /root/Golden-Voices-Wasp/template/app
 wasp db migrate-dev
 wasp start
 ```
+
+> **Confirmed 2026-05-05:** `wasp start` fails with version mismatch before any env var check runs. VAPI env vars are the runtime blocker; CLI version is the compile blocker.
 
 ---
 
