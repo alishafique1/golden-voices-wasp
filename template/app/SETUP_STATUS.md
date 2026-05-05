@@ -1,6 +1,6 @@
 # Golden Voices Connect — Setup Status
 
-**Last updated:** 2026-05-04 19:18 UTC
+**Last updated:** 2026-05-05 03:30 UTC
 **Wasp CLI:** 0.21.1 (project requires `^0.23.0` — Ali must run upgrade manually)
 **Working dir:** `/root/Golden-Voices-Wasp/template/app/`
 **Branch:** `hermes`
@@ -30,9 +30,9 @@
 
 ## Env Var Status
 
-### Present in `.env.server`
+### Present in `.env.server` (2026-05-05)
 
-| Env Var | Status |
+|| Env Var | Status ||
 |---|---|
 | `DATABASE_URL` | ✅ Set (Neon, shared_apps schema) |
 | `OPENAI_API_KEY` | ✅ Set |
@@ -40,23 +40,18 @@
 | `STRIPE_API_KEY` | ✅ Set |
 | `STRIPE_WEBHOOK_SECRET` | ✅ Set |
 | `ADMIN_EMAILS` | ✅ Set |
+| `CLIENT_URL` | ⚠️ Missing (falls back to `http://localhost:3000`) |
 
 ### Missing from `.env.server` (blocking)
 
-| Env Var | Blocker Level | Notes |
+|| Env Var | Blocker Level | Notes ||
 |---|---|---|
-| `CLIENT_URL` | HIGH | Email CTAs fall back to `http://localhost:3000` |
-| `CLERK_PUBLISHABLE_KEY` | LOW | Clerk not wired; email/password auth in use |
+| `CLIENT_URL` | HIGH | Email CTAs use localhost; needs `https://goldenvoices.app` |
+| `CLERK_PUBLISHABLE_KEY` | LOW | Clerk not wired; Wasp email/password in use |
 | `CLERK_SECRET_KEY` | LOW | Same as above |
 | `VAPI_PRIVATE_KEY` | **CRITICAL** | Outbound calls blocked |
 | `VAPI_ASSISTANT_ID` | **CRITICAL** | Outbound calls blocked |
 | `VAPI_PHONE_NUMBER_ID` | **CRITICAL** | Outbound calls blocked |
-
-### VAPI vars needed from Ali
-
-1. **`VAPI_PRIVATE_KEY`** → https://dashboard.vapi.ai → API Keys → Create key
-2. **`VAPI_ASSISTANT_ID`** → Create outbound assistant: GPT-4o-mini, elderly check-in (en/ur/hi)
-3. **`VAPI_PHONE_NUMBER_ID`** → Provision outbound phone number in Vapi dashboard
 
 ---
 
